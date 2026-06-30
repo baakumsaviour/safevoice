@@ -112,13 +112,13 @@ export default function Home() {
         <div>
           <div className="flex items-center gap-3 mb-12">
             <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center">
-              <span className="text-on-primary font-black text-lg">"</span>
+              <span className="text-on-primary font-black text-lg">&quot;</span>
             </div>
             <span className="body-md-strong text-white">SafeVoice</span>
           </div>
 
           <h1 className="display-xs mb-6 text-balance text-white">
-            You are not alone. Let's talk safely.
+            You are not alone. Let&apos;s talk safely.
           </h1>
 
           <div className="space-y-6 mb-12">
@@ -197,7 +197,7 @@ export default function Home() {
             >
               {msg.role !== 'system' && (
                 <div className={`caption text-body mb-1 px-1 flex items-center gap-1 ${msg.role === 'victim' ? 'text-right' : 'text-left'}`}>
-                  {msg.role === 'victim' ? 'You' : msg.isAI ? <><Bot className="w-3 h-3"/> SafeVoice Assistant</> : 'Expert'}
+                  {msg.role === 'victim' ? 'You' : (msg.isAI ? <span className="flex items-center gap-1"><Bot className="w-3 h-3"/> SafeVoice Assistant</span> : 'Expert')}
                 </div>
               )}
               
