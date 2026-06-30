@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { useEffect, useState, useRef } from 'react'
 import { ArrowLeft, Send, Shield, FileText, Bot } from 'lucide-react'
 import { getCaseDetailsAction, sendChatMessageAction } from '@/server/actions/chat'
+import { getAdminDataAction } from '@/server/actions/admin'
 import { createClient } from '@/lib/supabase/client'
+import { AssignCaseworker } from '@/components/feature/AssignCaseworker'
 
 type Message = {
   id: string
@@ -23,6 +25,7 @@ export default function CaseDetailsPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [caseworkers, setCaseworkers] = useState<any[]>([])
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
@@ -37,7 +40,11 @@ export default function CaseDetailsPage() {
 
   useEffect(() => {
     // Fetch initial case data and messages
-    getCaseDetailsAction(caseId).then(res => {
+    Promise.all([getCaseDetailsAction(caseId), getAdminDataAction()]).then(([res, adminRes]) => {
+      if (adminRes.success) {
+         setCaseworkers(adminRes.caseworkers || [])
+      }
+      
       if (res.success) {
         setCaseData(res.caseData)
         
@@ -124,12 +131,15 @@ export default function CaseDetailsPage() {
   return (
     <div className="p-8 h-screen flex flex-col">
       <header className="mb-6 flex items-center gap-4">
-        <Link href="/caseworker" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-mute/20 transition-colors">
+        <Link href="/admin" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-mute/20 transition-colors">
           <ArrowLeft className="w-5 h-5 text-ink" />
         </Link>
         <div>
           <h1 className="display-xs text-ink font-mono">{caseId}</h1>
-          <p className="body-sm text-body capitalize">{caseData.case_type.replace('_', ' ')} • Status: {caseData.status}</p>
+          <div className="flex items-center gap-4 mt-1">
+             <p className="body-sm text-body capitalize">{caseData.case_type.replace('_', ' ')} • Status: {caseData.status}</p>
+             <AssignCaseworker caseId={caseData.id} caseworkers={caseworkers} currentAssignee={caseData.assigned_to} />
+          </div>
         </div>
       </header>
 

@@ -176,10 +176,6 @@ export default function Home() {
                 <CheckCircle className="w-3 h-3 text-green-500" /> Secure Connection
               </p>
             </div>
-          </div>
-          <Link href="/auth/login" className="caption text-body hover:text-ink transition-colors">
-            Staff Login
-          </Link>
         </div>
 
         {/* Chat Messages */}

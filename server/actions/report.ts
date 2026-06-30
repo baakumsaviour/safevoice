@@ -1,6 +1,8 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { uploadEvidenceFile } from '@/lib/supabase/storage'
 
@@ -40,28 +42,49 @@ export async function submitReportAction(formData: FormData) {
 
     const caseNumber = 'CAS-' + Math.random().toString(36).substring(2, 8).toUpperCase()
     
-    // Create an anonymous user record in public.users
-    const { data: anonUser, error: userError } = await supabaseAdmin
-      .from('users')
-      .insert({
-        email: `anon-${Date.now()}@safevoice.local`, // Fake email for anon
-        role: 'victim',
-        phone_number: data.contact_info || null
-      })
-      .select('id')
-      .single()
+    const cookieStore = cookies()
+    const supabaseServer = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll() },
+          setAll() {}
+        }
+      }
+    )
 
-    if (userError || !anonUser) {
-      console.error('Failed to create anon user', userError)
-      return { error: 'Failed to create report securely.' }
+    const { data: { user } } = await supabaseServer.auth.getUser()
+
+    let victimId = ''
+    
+    if (user) {
+      victimId = user.id
+    } else {
+      // Create an anonymous user record in public.users
+      const { data: anonUser, error: userError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          email: `anon-${Date.now()}@safevoice.local`, // Fake email for anon
+          role: 'victim',
+          phone_number: data.contact_info || null
+        })
+        .select('id')
+        .single()
+
+      if (userError || !anonUser) {
+        console.error('Failed to create anon user', userError)
+        return { error: 'Failed to create report securely.' }
+      }
+      victimId = anonUser.id
     }
 
     const { data: newCase, error: caseError } = await supabaseAdmin
       .from('cases')
       .insert({
         case_number: caseNumber,
-        victim_id: anonUser.id,
-        created_by_user_id: anonUser.id,
+        victim_id: victimId,
+        created_by_user_id: victimId,
         narrative_encrypted: encryptedNarrative,
         incident_date: data.incident_date || null,
         incident_location: data.incident_location || null,
@@ -89,7 +112,7 @@ export async function submitReportAction(formData: FormData) {
           file_path: storagePath,
           file_type: evidenceFile.type,
           file_size: evidenceFile.size,
-          uploaded_by: anonUser.id
+          uploaded_by: victimId
         })
       }
     }

@@ -1,17 +1,15 @@
 import Link from 'next/link'
-import { AlertCircle, Clock, CheckCircle2 } from 'lucide-react'
-
-// Mock Data
-const activeCases = [
-  { id: 'CAS-A1B2C3', type: 'General Abuse', status: 'new', time: '10 mins ago', location: 'Accra' },
-  { id: 'CAS-X9Y8Z7', type: 'Domestic Violence', status: 'in_progress', time: '2 hours ago', location: 'Kumasi' },
-]
+import { AlertCircle, Clock, UserCheck } from 'lucide-react'
+import { getAdminDataAction } from '@/server/actions/admin'
 
 export const metadata = {
-  title: 'Active Cases | Caseworker',
+  title: 'Active Cases | Admin',
 }
 
-export default function CaseworkerPage() {
+export default async function AdminPage() {
+  const result = await getAdminDataAction()
+  const activeCases = result.cases || []
+  const caseworkers = result.caseworkers || []
   return (
     <div className="p-8">
       <header className="mb-8 flex items-center justify-between">
@@ -20,6 +18,22 @@ export default function CaseworkerPage() {
           <p className="body-md text-body">Manage and respond to incident reports securely.</p>
         </div>
       </header>
+
+      {/* Analytics Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+         <div className="bg-canvas border border-border rounded-xl p-4 shadow-sm">
+            <p className="caption-uppercase text-body mb-1">Total Cases</p>
+            <p className="display-sm text-ink">{result.analytics?.totalCases || 0}</p>
+         </div>
+         <div className="bg-canvas border border-border rounded-xl p-4 shadow-sm">
+            <p className="caption-uppercase text-body mb-1">Open Cases</p>
+            <p className="display-sm text-primary">{result.analytics?.openCases || 0}</p>
+         </div>
+         <div className="bg-canvas border border-border rounded-xl p-4 shadow-sm">
+            <p className="caption-uppercase text-body mb-1">Caseworkers</p>
+            <p className="display-sm text-ink">{caseworkers.length}</p>
+         </div>
+      </div>
 
       <div className="bg-canvas rounded-2xl border border-border shadow-sm overflow-hidden">
         <div className="grid grid-cols-12 gap-4 p-4 border-b border-border bg-canvas-soft caption-uppercase text-body">
@@ -30,20 +44,20 @@ export default function CaseworkerPage() {
         </div>
 
         <div className="divide-y divide-border">
-          {activeCases.map((c) => (
+          {activeCases.map((c: any) => (
             <div key={c.id} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-canvas-soft/50 transition-colors">
               <div className="col-span-3">
-                <span className="body-sm-strong font-mono">{c.id}</span>
+                <span className="body-sm-strong font-mono">{c.case_number}</span>
                 <p className="caption text-body flex items-center gap-1 mt-1">
-                  <Clock className="w-3 h-3" /> {c.time}
+                  <Clock className="w-3 h-3" /> {new Date(c.created_at).toLocaleDateString()}
                 </p>
               </div>
               <div className="col-span-3">
-                <p className="body-sm text-ink">{c.type}</p>
-                <p className="caption text-body">{c.location}</p>
+                <p className="body-sm text-ink capitalize">{c.case_type.replace('_', ' ')}</p>
+                <p className="caption text-body">{c.incident_location || 'No location'}</p>
               </div>
               <div className="col-span-3">
-                {c.status === 'new' ? (
+                {c.status === 'open' ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-700 caption-strong">
                     <AlertCircle className="w-3.5 h-3.5" /> Needs Triage
                   </span>
@@ -52,9 +66,14 @@ export default function CaseworkerPage() {
                     <Clock className="w-3.5 h-3.5" /> In Progress
                   </span>
                 )}
+                {c.assigned_user?.full_name && (
+                   <p className="caption text-body mt-1 flex items-center gap-1">
+                      <UserCheck className="w-3 h-3" /> {c.assigned_user.full_name}
+                   </p>
+                )}
               </div>
               <div className="col-span-3">
-                <Link href={`/caseworker/cases/${c.id}`}>
+                <Link href={`/admin/cases/${c.case_number}`}>
                   <button className="bg-ink text-on-dark px-4 py-2 rounded-full body-sm hover:opacity-90 transition-opacity">
                     View & Respond
                   </button>

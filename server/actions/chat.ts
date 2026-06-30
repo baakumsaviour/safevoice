@@ -1,6 +1,8 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -87,13 +89,33 @@ If their situation is complex or they ask for a human, say you will notify a hum
 
 export async function initializeChatAction(initialMessage: string) {
   try {
-    const { data: anonUser, error: userError } = await supabaseAdmin
-      .from('users')
-      .insert({ email: `anon-chat-${Date.now()}@safevoice.local`, role: 'victim' })
-      .select('id')
-      .single()
+    const cookieStore = cookies()
+    const supabaseServer = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll() },
+          setAll() {}
+        }
+      }
+    )
 
-    if (userError || !anonUser) throw userError
+    const { data: { user } } = await supabaseServer.auth.getUser()
+    let victimId = ''
+
+    if (user) {
+      victimId = user.id
+    } else {
+      const { data: anonUser, error: userError } = await supabaseAdmin
+        .from('users')
+        .insert({ email: `anon-chat-${Date.now()}@safevoice.local`, role: 'victim' })
+        .select('id')
+        .single()
+
+      if (userError || !anonUser) throw userError
+      victimId = anonUser.id
+    }
 
     const caseNumber = 'CAS-' + Math.random().toString(36).substring(2, 8).toUpperCase()
     
@@ -101,8 +123,8 @@ export async function initializeChatAction(initialMessage: string) {
       .from('cases')
       .insert({
         case_number: caseNumber,
-        victim_id: anonUser.id,
-        created_by_user_id: anonUser.id,
+        victim_id: victimId,
+        created_by_user_id: victimId,
         status: 'open',
         priority: 'high',
         case_type: 'general_abuse',
@@ -118,17 +140,17 @@ export async function initializeChatAction(initialMessage: string) {
       .from('case_messages')
       .insert({
         case_id: newCase.id,
-        sender_id: anonUser.id,
+        sender_id: victimId,
         sender_role: 'victim',
         message_encrypted: Buffer.from(initialMessage).toString('base64')
       })
 
     if (msgError) throw msgError
 
-    // Trigger AI async
-    triggerAIResponse(newCase.id)
+    // Trigger AI
+    await triggerAIResponse(newCase.id)
 
-    return { success: true, caseId: newCase.id, caseNumber: newCase.case_number, userId: anonUser.id }
+    return { success: true, caseId: newCase.id, caseNumber: newCase.case_number, userId: victimId }
   } catch (error) {
     console.error('Chat initialization error:', error)
     return { error: 'Failed to start secure chat. Please try again or use the full report form.' }
@@ -157,7 +179,7 @@ export async function sendChatMessageAction(caseId: string, userId: string, mess
 
     // If victim sent message, trigger AI
     if (role === 'victim') {
-      triggerAIResponse(caseId)
+      await triggerAIResponse(caseId)
     }
 
     return { success: true, message: data }

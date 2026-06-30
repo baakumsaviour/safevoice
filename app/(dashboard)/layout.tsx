@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import Link from 'next/link'
-import { Shield, Map, MessageSquare, LogOut } from 'lucide-react'
+import { Shield, Map, MessageSquare, LogOut, Users } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -15,13 +15,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
         
         <nav className="flex-1 py-6 px-4 space-y-2">
-          <Link href="/caseworker" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors">
+          <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors">
             <MessageSquare className="w-5 h-5" />
             <span>Active Cases</span>
           </Link>
           <Link href="/analytics" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors">
             <Map className="w-5 h-5" />
             <span>Analytics & Map</span>
+          </Link>
+          <Link href="/admin/users" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors">
+            <Users className="w-5 h-5" />
+            <span>User Management</span>
           </Link>
         </nav>
 

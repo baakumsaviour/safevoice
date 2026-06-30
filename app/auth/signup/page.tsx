@@ -4,49 +4,41 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 
+import { signupAction } from '../actions'
+
 export default function SignupPage() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    name: '',
-  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
+    const formData = new FormData(e.currentTarget)
+    
     // Validation
-    if (!formData.email || !formData.password || !formData.name) {
-      setError('Please fill in all fields')
-      setLoading(false)
-      return
-    }
+    const password = formData.get('password') as string
+    const confirmPassword = formData.get('confirmPassword') as string
 
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       setError('Passwords do not match')
       setLoading(false)
       return
     }
 
-    if (formData.password.length < 8) {
+    if (password.length < 8) {
       setError('Password must be at least 8 characters')
       setLoading(false)
       return
     }
 
     try {
-      // TODO: Call signup API
-      console.log('Signup attempt:', formData)
-      setSuccess(true)
-      setTimeout(() => {
-        window.location.href = '/auth/login'
-      }, 2000)
-    } catch (err) {
+      const res = await signupAction(formData)
+      if (res?.error) {
+        setError(res.error)
+      }
+    } catch (err: any) {
       setError('Failed to create account. Please try again.')
     } finally {
       setLoading(false)
@@ -74,13 +66,7 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* Success */}
-          {success && (
-            <div className="mb-6 p-4 bg-primary/10 border border-primary rounded-[6px] flex gap-3">
-              <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-              <p className="caption text-ink">Account created! Redirecting...</p>
-            </div>
-          )}
+
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,8 +74,8 @@ export default function SignupPage() {
               <label className="block body-sm-strong text-ink mb-2">Full Name</label>
               <input
                 type="text"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                name="name"
+                required
                 placeholder="Your name"
                 className="w-full px-4 py-3 border-2 border-mute rounded-[6px] bg-canvas text-ink body-sm placeholder-body"
               />
@@ -99,8 +85,8 @@ export default function SignupPage() {
               <label className="block body-sm-strong text-ink mb-2">Email</label>
               <input
                 type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                name="email"
+                required
                 placeholder="you@example.com"
                 className="w-full px-4 py-3 border-2 border-mute rounded-[6px] bg-canvas text-ink body-sm placeholder-body"
               />
@@ -110,8 +96,8 @@ export default function SignupPage() {
               <label className="block body-sm-strong text-ink mb-2">Password</label>
               <input
                 type="password"
-                value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                name="password"
+                required
                 placeholder="At least 8 characters"
                 className="w-full px-4 py-3 border-2 border-mute rounded-[6px] bg-canvas text-ink body-sm placeholder-body"
               />
@@ -121,8 +107,8 @@ export default function SignupPage() {
               <label className="block body-sm-strong text-ink mb-2">Confirm Password</label>
               <input
                 type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                name="confirmPassword"
+                required
                 placeholder="Confirm password"
                 className="w-full px-4 py-3 border-2 border-mute rounded-[6px] bg-canvas text-ink body-sm placeholder-body"
               />

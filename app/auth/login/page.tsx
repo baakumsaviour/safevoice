@@ -4,27 +4,22 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { AlertCircle } from 'lucide-react'
 
+import { loginAction } from '../actions'
+
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
     try {
-      // TODO: Call login API
-      console.log('Login attempt:', { email, password })
-      
-      // For testing: allow admin login
-      if (email === 'sbaakum@gmail.com' && password === '00000000') {
-        window.location.href = '/admin'
-      } else {
-        // Regular user login would redirect to /report or /dashboard
-        window.location.href = '/report'
+      const formData = new FormData(e.currentTarget)
+      const res = await loginAction(formData)
+      if (res?.error) {
+        setError(res.error)
       }
     } catch (err: any) {
       setError(err.message || 'Failed to log in')
@@ -60,8 +55,8 @@ export default function LoginPage() {
               <label className="block body-sm-strong text-ink mb-2">Email</label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
+                required
                 placeholder="you@example.com"
                 className="w-full px-4 py-3 border-2 border-mute rounded-[6px] bg-canvas text-ink body-sm placeholder-body"
               />
@@ -71,8 +66,8 @@ export default function LoginPage() {
               <label className="block body-sm-strong text-ink mb-2">Password</label>
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                name="password"
+                required
                 placeholder="Your password"
                 className="w-full px-4 py-3 border-2 border-mute rounded-[6px] bg-canvas text-ink body-sm placeholder-body"
               />
