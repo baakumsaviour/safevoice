@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Shield, Send, AlertCircle, FileText, CheckCircle, Bot } from 'lucide-react'
 import { initializeChatAction, sendChatMessageAction } from '@/server/actions/chat'
 import { createClient } from '@/lib/supabase/client'
@@ -110,12 +111,14 @@ export default function Home() {
       {/* Left Sidebar: Instructions & Context */}
       <section className="w-full md:w-1/3 lg:w-[400px] bg-ink text-on-dark flex flex-col justify-between p-8 shrink-0 md:h-screen md:overflow-y-auto">
         <div>
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center">
-              <span className="text-on-primary font-black text-lg">&quot;</span>
+          <Link href="/">
+            <div className="flex items-center gap-3 mb-12 cursor-pointer">
+              <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center">
+                <Image src="/safevoice logo.png" alt="SafeVoice Logo" width={28} height={28} className="object-contain" />
+              </div>
+              <span className="body-md-strong text-white">SafeVoice</span>
             </div>
-            <span className="body-md-strong text-white">SafeVoice</span>
-          </div>
+          </Link>
 
           <h1 className="display-xs mb-6 text-balance text-white">
             You are not alone. Let&apos;s talk safely.
@@ -146,10 +149,19 @@ export default function Home() {
               If you have photos, evidence, or want to write a detailed offline report, use our secure form.
             </p>
             <Link href="/report">
-              <button className="w-full bg-white/10 text-white body-sm py-2.5 rounded-full hover:bg-white/20 transition-colors">
+              <button className="w-full bg-white/10 text-white body-sm py-2.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer">
                 Open Report Form
               </button>
             </Link>
+            
+            <div className="mt-4 text-center">
+              <p className="caption text-on-dark/70 mb-2">Already have a report?</p>
+              <Link href="/auth/login">
+                 <button className="w-full bg-primary text-on-primary body-sm py-2.5 rounded-full hover:opacity-90 transition-opacity cursor-pointer">
+                   Login / Sign Up
+                 </button>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -230,7 +242,7 @@ export default function Home() {
             <button 
               onClick={handleSend}
               disabled={!input.trim() || isSending}
-              className="absolute right-2 top-2 bottom-2 aspect-square rounded-full bg-primary text-on-primary flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-50 disabled:bg-mute"
+              className="absolute right-2 top-2 bottom-2 aspect-square rounded-full bg-primary text-on-primary flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-50 disabled:bg-mute cursor-pointer"
             >
               <Send className="w-5 h-5 ml-0.5" />
             </button>

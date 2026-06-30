@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { AlertCircle } from 'lucide-react'
 
 import { loginAction } from '../actions'
@@ -34,9 +35,11 @@ export default function LoginPage() {
         <div className="bg-canvas rounded-[12px] p-8 border-2 border-mute/20">
           {/* Header */}
           <div className="mb-8 text-center">
-            <div className="w-12 h-12 bg-primary rounded-sm flex items-center justify-center mx-auto mb-4">
-              <span className="text-on-primary font-black text-xl">"</span>
-            </div>
+            <Link href="/">
+              <div className="w-12 h-12 bg-primary rounded-sm flex items-center justify-center mx-auto mb-4 cursor-pointer">
+                <Image src="/safevoice logo.png" alt="SafeVoice Logo" width={32} height={32} className="object-contain" />
+              </div>
+            </Link>
             <h1 className="display-sm text-ink mb-2">Sign in</h1>
             <p className="body-md text-body">Access your account</p>
           </div>
@@ -76,7 +79,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-on-primary body-md font-normal py-3 px-8 rounded-[32px] hover:opacity-90 transition-opacity disabled:opacity-50 mt-6"
+              className="w-full bg-primary text-on-primary body-md font-normal py-3 px-8 rounded-[32px] hover:opacity-90 transition-opacity disabled:opacity-50 mt-6 cursor-pointer"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>

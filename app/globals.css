@@ -6,7 +6,7 @@
 :root {
   /* Vodafone Design System */
   /* Colors */
-  --primary: #e60000;
+  --primary: #FF5722;
   --on-primary: #ffffff;
   --ink: #25282b;
   --body: #7e7e7e;
@@ -79,7 +79,7 @@
   --font-sans: 'Geist', 'Geist Fallback';
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   
-  --color-primary: #e60000;
+  --color-primary: #FF5722;
   --color-primary-foreground: #ffffff;
   --color-ink: #25282b;
   --color-body: #7e7e7e;

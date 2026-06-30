@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Shield, Map, MessageSquare, LogOut, Users } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -8,10 +9,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside className="w-full md:w-64 bg-ink text-on-dark flex flex-col md:h-screen sticky top-0 shrink-0">
         <div className="p-6 border-b border-white/10 flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-            <Shield className="w-5 h-5 text-white" />
-          </div>
-          <span className="body-md-strong">SafeVoice Admin</span>
+          <Link href="/">
+            <div className="flex items-center gap-3 cursor-pointer">
+              <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
+                <Image src="/safevoice logo.png" alt="SafeVoice Logo" width={22} height={22} className="object-contain" />
+              </div>
+              <span className="body-md-strong text-white">SafeVoice Admin</span>
+            </div>
+          </Link>
         </div>
         
         <nav className="flex-1 py-6 px-4 space-y-2">

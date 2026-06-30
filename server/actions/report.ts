@@ -42,7 +42,7 @@ export async function submitReportAction(formData: FormData) {
 
     const caseNumber = 'CAS-' + Math.random().toString(36).substring(2, 8).toUpperCase()
     
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabaseServer = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

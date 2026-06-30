@@ -89,7 +89,7 @@ If their situation is complex or they ask for a human, say you will notify a hum
 
 export async function initializeChatAction(initialMessage: string) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabaseServer = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
