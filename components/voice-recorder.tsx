@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react'
 import { Mic, Square } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 
 interface VoiceRecorderProps {
   onRecordingComplete?: (blob: Blob) => void
@@ -71,27 +70,25 @@ export function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProps) {
       {isRecording ? (
         <>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium">Recording: {formatTime(recordedTime)}</span>
+            <div className="w-3 h-3 bg-primary rounded-full animate-pulse" />
+            <span className="body-sm-strong text-ink">Recording: {formatTime(recordedTime)}</span>
           </div>
-          <Button
+          <button
             onClick={stopRecording}
-            variant="destructive"
-            size="sm"
+            className="bg-primary text-on-primary body-sm font-normal py-2 px-4 rounded-[32px] hover:opacity-90 transition-opacity flex items-center gap-2"
           >
-            <Square className="w-4 h-4 mr-2" />
+            <Square className="w-4 h-4" />
             Stop
-          </Button>
+          </button>
         </>
       ) : (
-        <Button
+        <button
           onClick={startRecording}
-          variant="outline"
-          size="sm"
+          className="border-2 border-ink text-ink body-sm font-normal py-2 px-4 rounded-[32px] hover:bg-ink/5 transition-colors flex items-center gap-2"
         >
-          <Mic className="w-4 h-4 mr-2" />
+          <Mic className="w-4 h-4" />
           Record Audio
-        </Button>
+        </button>
       )}
     </div>
   )
