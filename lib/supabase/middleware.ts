@@ -36,11 +36,37 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard')
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
   
-  if (isDashboardRoute && !user) {
+  if ((isDashboardRoute || isAdminRoute) && !user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = '/auth/login'
     return NextResponse.redirect(url)
+  }
+
+  if (user && (isDashboardRoute || isAdminRoute)) {
+    // Fetch user role
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (isAdminRoute) {
+      if (!userData || !['caseworker', 'admin'].includes(userData.role)) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/dashboard'
+        return NextResponse.redirect(url)
+      }
+    }
+
+    if (isDashboardRoute) {
+      if (!userData || userData.role !== 'victim') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/admin'
+        return NextResponse.redirect(url)
+      }
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
