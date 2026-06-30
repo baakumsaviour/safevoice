@@ -1,11 +1,11 @@
 -- Run this script in your Supabase SQL Editor
 
 -- 1. Enable Realtime for the case_messages table
-begin;
+
   -- remove the supabase_realtime publication if it exists for case_messages (cleanup before re-adding)
   drop publication if exists supabase_realtime;
   create publication supabase_realtime;
-commit;
+
 
 alter publication supabase_realtime add table public.case_messages;
 
