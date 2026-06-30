@@ -1,165 +1,153 @@
+'use client'
+
 import Link from 'next/link'
-import { Shield, Lock, MessageCircle } from 'lucide-react'
+import Image from 'next/image'
+import { Lock, CheckCircle } from 'lucide-react'
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-canvas">
-      {/* Navigation - Dark Ink Band */}
-      <header className="bg-ink text-on-dark sticky top-0 z-50">
-        <div className="max-w-full px-8 py-4 flex items-center justify-between">
+      {/* Simple Navigation */}
+      <header className="bg-canvas border-b border-mute sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center">
-              <span className="text-white font-black text-lg">"</span>
+              <span className="text-on-primary font-black text-lg">"</span>
             </div>
-            <span className="body-sm-strong">SAFEVOICE</span>
+            <span className="body-sm-strong text-ink">SafeVoice</span>
           </div>
-          <nav className="hidden md:flex gap-8">
-            <Link href="/report" className="body-sm hover:text-primary transition-colors">Report</Link>
-            <Link href="/dashboard" className="body-sm hover:text-primary transition-colors">Dashboard</Link>
-            <Link href="/analytics" className="body-sm hover:text-primary transition-colors">Analytics</Link>
-          </nav>
+          <div className="flex gap-4 items-center">
+            <Link href="/auth/login" className="body-sm text-ink hover:text-primary transition-colors">
+              Sign in
+            </Link>
+            <Link href="/auth/signup" className="bg-primary text-on-primary body-sm font-normal py-2 px-6 rounded-[32px] hover:opacity-90 transition-opacity">
+              Get Started
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* Hero Band - Dark with Massive Headline */}
-      <section className="bg-ink text-on-dark py-24 md:py-40 px-8 overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="display-hero mb-8 text-balance">PROTECTED VOICE</h1>
-          <p className="body-lg max-w-2xl text-on-dark/90 mb-12">
-            Trauma-informed case management system with military-grade security. Report safely. Manage securely. Thrive together.
-          </p>
-          <div className="flex gap-6 flex-wrap">
+      {/* Hero Section - Image-Heavy */}
+      <section className="py-12 md:py-20 px-8 bg-canvas-soft">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <span className="caption-uppercase text-primary mb-4 inline-block">Your voice matters</span>
+            <h1 className="display-lg text-ink mb-6 text-balance">
+              Report safely and securely
+            </h1>
+            <p className="body-md text-body mb-8 max-w-md">
+              Tell us what happened. We'll listen without judgment and connect you with professional support.
+            </p>
             <Link href="/report">
-              <button className="bg-primary text-on-primary body-md font-normal py-3 px-12 rounded-[60px] hover:opacity-90 transition-opacity">
-                Report Now
+              <button className="bg-primary text-on-primary body-md font-normal py-3 px-8 rounded-[32px] hover:opacity-90 transition-opacity">
+                Start Report
               </button>
             </Link>
-            <Link href="/dashboard">
-              <button className="border-2 border-on-dark text-on-dark body-md font-normal py-3 px-12 rounded-[60px] hover:bg-on-dark/10 transition-colors">
-                Caseworker Login
-              </button>
-            </Link>
+          </div>
+          <div className="relative h-80 md:h-96">
+            <Image
+              src="/hero-support.png"
+              alt="Supportive hands coming together"
+              fill
+              className="object-cover rounded-[12px]"
+              priority
+            />
           </div>
         </div>
       </section>
 
-      {/* Content Band - Three Features */}
-      <section className="bg-canvas py-20 md:py-32 px-8">
+      {/* Trust Section - Why SafeVoice */}
+      <section className="py-20 md:py-32 px-8 bg-canvas">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-12">
+          <h2 className="display-md text-ink text-center mb-4">We keep you safe</h2>
+          <p className="body-md text-center text-body mb-16 max-w-2xl mx-auto">
+            Three things we promise you
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-8">
             {/* Feature 1 */}
             <div className="flex flex-col gap-6">
-              <div className="w-16 h-16 bg-primary rounded-sm flex items-center justify-center flex-shrink-0">
-                <Lock className="w-8 h-8 text-on-primary" />
+              <div className="h-64 relative">
+                <Image
+                  src="/security-lock.png"
+                  alt="Private and secure lock illustration"
+                  fill
+                  className="object-cover rounded-[12px]"
+                />
               </div>
               <div>
-                <h3 className="display-xs mb-4 text-ink">End-to-End Encrypted</h3>
-                <p className="body-md text-body">All case narratives, messages, and evidence are protected with military-grade AES-256 encryption before transmission.</p>
+                <h3 className="body-lg-strong text-ink mb-3">Completely private</h3>
+                <p className="body-md text-body">Your report is encrypted. Only trained professionals can access it with your permission.</p>
               </div>
             </div>
 
             {/* Feature 2 */}
             <div className="flex flex-col gap-6">
-              <div className="w-16 h-16 bg-primary rounded-sm flex items-center justify-center flex-shrink-0">
-                <Shield className="w-8 h-8 text-on-primary" />
+              <div className="h-64 relative">
+                <Image
+                  src="/confidential-private.png"
+                  alt="Confidentiality icon"
+                  fill
+                  className="object-cover rounded-[12px]"
+                />
               </div>
               <div>
-                <h3 className="display-xs mb-4 text-ink">Trauma-Informed</h3>
-                <p className="body-md text-body">Quick escape button, minimal navigation, supportive language, and resources throughout. Designed by survivors, for survivors.</p>
+                <h3 className="body-lg-strong text-ink mb-3">You're in control</h3>
+                <p className="body-md text-body">Share only what you're comfortable with. You can update or add information anytime.</p>
               </div>
             </div>
 
             {/* Feature 3 */}
             <div className="flex flex-col gap-6">
-              <div className="w-16 h-16 bg-primary rounded-sm flex items-center justify-center flex-shrink-0">
-                <MessageCircle className="w-8 h-8 text-on-primary" />
+              <div className="h-64 bg-canvas-soft rounded-[12px] flex items-center justify-center">
+                <div className="text-center">
+                  <CheckCircle className="w-20 h-20 text-primary mx-auto mb-4" />
+                  <p className="body-md text-body">Accessible offline</p>
+                </div>
               </div>
               <div>
-                <h3 className="display-xs mb-4 text-ink">Secure Messaging</h3>
-                <p className="body-md text-body">Encrypted communication between victims and caseworkers. Full audit trail for compliance and accountability.</p>
+                <h3 className="body-lg-strong text-ink mb-3">Always available</h3>
+                <p className="body-md text-body">Access support resources anytime, even without internet. Your safety first.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Portal Selection Band - Light with Cards */}
-      <section className="bg-canvas-soft py-20 md:py-32 px-8">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="display-md text-ink text-center mb-4">ACCESS YOUR PORTAL</h2>
-          <p className="body-md text-center text-body mb-16 max-w-2xl mx-auto">Choose your role to access the secure case management system.</p>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Victim Portal Card */}
-            <Link href="/report" className="group">
-              <div className="bg-canvas rounded-[6px] p-8 border-2 border-ink/10 hover:border-primary transition-all h-full flex flex-col">
-                <div className="w-14 h-14 bg-primary rounded-sm flex items-center justify-center mb-6 group-hover:opacity-90 transition-opacity">
-                  <Shield className="w-7 h-7 text-on-primary" />
-                </div>
-                <h3 className="display-xs text-ink mb-3">Victim Portal</h3>
-                <p className="body-md text-body flex-grow mb-6">Report abuse securely and anonymously. Upload evidence. Access support resources 24/7.</p>
-                <div className="body-sm-strong text-primary group-hover:gap-2 transition-all inline-flex items-center">
-                  <span>Begin Report</span>
-                  <span>→</span>
-                </div>
-              </div>
-            </Link>
-
-            {/* Caseworker Card */}
-            <Link href="/dashboard" className="group">
-              <div className="bg-canvas rounded-[6px] p-8 border-2 border-ink/10 hover:border-primary transition-all h-full flex flex-col">
-                <div className="w-14 h-14 bg-primary rounded-sm flex items-center justify-center mb-6 group-hover:opacity-90 transition-opacity">
-                  <MessageCircle className="w-7 h-7 text-on-primary" />
-                </div>
-                <h3 className="display-xs text-ink mb-3">Caseworker Dashboard</h3>
-                <p className="body-md text-body flex-grow mb-6">Manage cases, communicate securely, assign cases, and track progress with your team.</p>
-                <div className="body-sm-strong text-primary group-hover:gap-2 transition-all inline-flex items-center">
-                  <span>Access Dashboard</span>
-                  <span>→</span>
-                </div>
-              </div>
-            </Link>
-
-            {/* Analytics Card */}
-            <Link href="/analytics" className="group">
-              <div className="bg-canvas rounded-[6px] p-8 border-2 border-ink/10 hover:border-primary transition-all h-full flex flex-col">
-                <div className="w-14 h-14 bg-primary rounded-sm flex items-center justify-center mb-6 group-hover:opacity-90 transition-opacity">
-                  <svg className="w-7 h-7 text-on-primary" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M3 3h18v18H3z" opacity="0.2"/>
-                    <path d="M3 15h4v6H3zm6-9h4v15h-4zm6-3h4v18h-4z"/>
-                  </svg>
-                </div>
-                <h3 className="display-xs text-ink mb-3">Analytics Hub</h3>
-                <p className="body-md text-body flex-grow mb-6">View trends, geographic data, case metrics, and key performance indicators for your organization.</p>
-                <div className="body-sm-strong text-primary group-hover:gap-2 transition-all inline-flex items-center">
-                  <span>View Analytics</span>
-                  <span>→</span>
-                </div>
-              </div>
-            </Link>
-          </div>
+      {/* Simple CTA Section */}
+      <section className="py-20 md:py-32 px-8 bg-ink text-on-dark">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="display-md mb-6 text-balance">Ready to share your story?</h2>
+          <p className="body-md mb-12 text-on-dark/90">
+            Start a report whenever you're ready. It's simple, safe, and confidential.
+          </p>
+          <Link href="/report">
+            <button className="bg-primary text-on-primary body-md font-normal py-3 px-12 rounded-[32px] hover:opacity-90 transition-opacity inline-block">
+              Report an Incident
+            </button>
+          </Link>
         </div>
       </section>
 
-      {/* Support Resources - Ink Band */}
-      <section className="bg-ink text-on-dark py-20 md:py-32 px-8">
+      {/* Support Resources Footer */}
+      <section className="py-16 px-8 bg-canvas-soft border-t border-mute">
         <div className="max-w-7xl mx-auto">
-          <h2 className="display-md mb-8 text-balance">IMMEDIATE SUPPORT</h2>
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            <div>
-              <p className="body-sm-strong mb-2">National Sexual Assault Hotline</p>
-              <p className="display-sm text-primary">1-800-656-4673</p>
-              <p className="caption text-on-dark/70 mt-2">Available 24/7 | Confidential</p>
-            </div>
-            <div>
-              <p className="body-sm-strong mb-2">National Domestic Violence Hotline</p>
-              <p className="display-sm text-primary">1-800-799-7233</p>
-              <p className="caption text-on-dark/70 mt-2">Available 24/7 | Multilingual</p>
-            </div>
+          <h3 className="body-sm-strong text-ink text-center mb-8">Immediate help available 24/7</h3>
+          <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+            <a href="tel:1-800-656-4673" className="bg-canvas rounded-[12px] p-6 border-2 border-primary/20 hover:border-primary transition-all text-center">
+              <p className="caption-uppercase text-body mb-2">Sexual Assault Support</p>
+              <p className="display-sm text-primary font-mono">1-800-656-HOPE</p>
+              <p className="caption text-body mt-2">24/7 | Confidential</p>
+            </a>
+            <a href="tel:1-800-799-7233" className="bg-canvas rounded-[12px] p-6 border-2 border-primary/20 hover:border-primary transition-all text-center">
+              <p className="caption-uppercase text-body mb-2">Domestic Violence Support</p>
+              <p className="display-sm text-primary font-mono">1-800-799-SAFE</p>
+              <p className="caption text-body mt-2">24/7 | Multilingual</p>
+            </a>
           </div>
-          <div className="border-t border-on-dark/20 pt-8">
-            <p className="caption text-on-dark/70">SafeVoice is a trauma-informed platform built in partnership with survivor advocacy organizations. Your privacy and safety are our highest priority.</p>
-          </div>
+          <p className="caption text-body text-center mt-12">
+            SafeVoice is confidential, trauma-informed, and judgment-free. You deserve support.
+          </p>
         </div>
       </section>
     </main>
