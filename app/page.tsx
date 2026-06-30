@@ -176,7 +176,6 @@ export default function Home() {
                 <CheckCircle className="w-3 h-3 text-green-500" /> Secure Connection
               </p>
             </div>
-            </div>
           </div>
         </div>
 
