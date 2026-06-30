@@ -11,7 +11,7 @@ export function QuickEscapeButton() {
   return (
     <button
       onClick={handleEscape}
-      className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+      className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-primary hover:opacity-90 text-on-primary px-4 py-2 rounded-[32px] body-sm-strong transition-opacity"
       aria-label="Quick escape to safe website"
       title="Click to quickly leave this site"
     >

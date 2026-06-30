@@ -3,9 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { DashboardSidebar } from '@/components/dashboard-sidebar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { AlertCircle, Clock, CheckCircle, Archive } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -175,11 +172,11 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       </div>
-                      <Button variant="outline" className="ml-4">
+                      <button className="ml-4 border-2 border-ink text-ink body-sm font-normal py-2 px-4 rounded-[32px] hover:bg-ink/5 transition-colors">
                         Review
-                      </Button>
+                      </button>
                     </div>
-                  </Card>
+                  </div>
                 </Link>
               ))}
             </div>
