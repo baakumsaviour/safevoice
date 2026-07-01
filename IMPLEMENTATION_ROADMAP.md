@@ -12,20 +12,20 @@
 - [x] Hero images generated - support, security, confidentiality
 
 ### In Progress 🔄
-- [ ] Supabase auth integration setup
-- [ ] User roles and RBAC middleware
-- [ ] Session management
-- [ ] Error handling and validation
+- [x] Supabase auth integration setup
+- [x] User roles and RBAC middleware
+- [x] Session management
+- [x] Error handling and validation
 
 ### Next (Priority)
-- [ ] Create admin dashboard (`/admin`)
-- [ ] Create admin login route (`/auth/admin-login` with unique link)
-- [ ] Create caseworker protected routes
-- [ ] Database schema setup
+- [x] Create admin dashboard (`/admin`)
+- [x] Create admin login route (`/auth/admin-login` with unique link)
+- [x] Create caseworker protected routes
+- [x] Database schema setup
 
 ---
 
-## Phase 2: Authentication & Authorization (NEXT 2-3 DAYS)
+## Phase 2: Authentication & Authorization (COMPLETE ✓)
 **Goal:** Secure multi-role access system
 
 ### Tasks
@@ -63,7 +63,7 @@
 
 ---
 
-## Phase 3: Victim Reporting Flow (3-5 DAYS)
+## Phase 3: Victim Reporting Flow (CURRENT - IN PROGRESS)
 **Goal:** Simple, accessible reporting experience
 
 ### Pages to Create

@@ -3,6 +3,8 @@ import { FileText, Clock, AlertCircle } from 'lucide-react'
 import { getVictimCasesAction } from '@/server/actions/victim'
 import { logoutAction } from '@/app/auth/actions'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'My Reports | SafeVoice',
 }

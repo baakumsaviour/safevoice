@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { AlertCircle, Clock, UserCheck } from 'lucide-react'
 import { getAdminDataAction } from '@/server/actions/admin'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Active Cases | Admin',
 }
