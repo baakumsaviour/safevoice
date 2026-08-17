@@ -10,30 +10,42 @@ compromised. The audit also found the Supabase project
 `mraqktjekogpucmodghp.supabase.co` **no longer resolves in DNS** — it was
 paused (free-tier inactivity) or deleted, so the deployed app has no backend.
 
-## 1. Restore or recreate the Supabase project
+## 1. The replacement Supabase project
 
-Option A — restore: log in at https://supabase.com/dashboard, find the project
-(`mraqktjekogpucmodghp`), and restore/unpause it if offered.
+The dead project was replaced on 2026-08-17 by **`wnfvzbybxhswucrwolyf`**
+(`https://wnfvzbybxhswucrwolyf.supabase.co`), which uses the new API-key
+scheme: a publishable key (`sb_publishable_…`, safe for the browser, goes in
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`) and a secret key (`sb_secret_…`, server-only,
+goes in `SUPABASE_SERVICE_ROLE_KEY`).
 
-Option B — recreate (recommended, since keys must rotate anyway):
-1. Create a new Supabase project (region close to Ghana, e.g. `eu-west-2`).
-2. **Auth → Providers → enable "Anonymous sign-ins"** (required: anonymous
-   reporters get real sessions so RLS and Realtime work).
-3. Auth → disable email confirmations, or keep them and accept the
+Remaining setup on that project:
+
+1. **Auth → Providers → enable "Anonymous sign-ins"** — currently **off**.
+   `/auth/v1/settings` reports `"anonymous_users": false`, and the anonymous
+   reporter flow cannot create sessions until this is on, so RLS and Realtime
+   will reject anonymous reporters.
+2. Auth → disable email confirmations, or keep them and accept the
    "check your inbox" signup flow (the app supports both).
-4. Link and push the schema:
+3. Apply the schema — either via the Supabase MCP server (`apply_migration`)
+   or the CLI:
    ```bash
-   supabase link --project-ref <new-ref>
+   supabase link --project-ref wnfvzbybxhswucrwolyf
    supabase db push          # applies supabase/migrations/*
    ```
-5. Create the storage bucket is handled by the migration; verify in Storage UI
-   that `evidence` exists and is private.
-6. Create staff accounts: Auth → Add user (email+password) for each admin /
+   The single migration `20260817000000_init.sql` is idempotent (guarded with
+   `IF NOT EXISTS` / `DROP POLICY IF EXISTS`), so re-running it is safe.
+4. The `evidence` storage bucket is created by the migration; verify in the
+   Storage UI that it exists and is **private**.
+5. Create staff accounts: Auth → Add user (email+password) for each admin /
    caseworker, then insert matching rows:
    ```sql
    insert into public.users (id, email, full_name, role)
    values ('<auth-user-uuid>', 'admin@yourdomain', 'Admin Name', 'admin');
    ```
+
+The Supabase MCP server is wired into this repo at project scope in
+`.mcp.json`, pinned to `project_ref=wnfvzbybxhswucrwolyf`, so agent access
+never reaches other projects in the account.
 
 ## 2. Rotate every secret
 
@@ -46,9 +58,16 @@ Option B — recreate (recommended, since keys must rotate anyway):
 
 ## 3. Configure environments
 
-Local: copy `.env.example` → `.env.local`, or use the local stack
-(`supabase start` prints local keys). Delete the old `.env` file after
-migrating values you still need.
+Local: `.env.local` now points at the cloud project
+`wnfvzbybxhswucrwolyf`. To develop against the Docker stack instead
+(`supabase start`, which prints its own local keys), restore the saved copy at
+`.env.local.localstack.bak`. Note the tradeoff: while `.env.local` points at
+the cloud project, local dev reads and writes real cloud data.
+
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` holds the `sb_publishable_…` key and
+`SUPABASE_SERVICE_ROLE_KEY` holds the `sb_secret_…` key. The env var names kept
+the old wording so no code changes were needed; `@supabase/supabase-js` v2.107
+accepts either key scheme.
 
 Vercel (production): Project → Settings → Environment Variables, set:
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
