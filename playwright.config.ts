@@ -8,7 +8,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Serial: the suite shares one dev server and one seeded DB; parallel login
+  // flows contend on server-action compilation and flake on URL timeouts.
+  workers: 1,
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:3000',

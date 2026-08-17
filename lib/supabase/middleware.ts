@@ -40,11 +40,15 @@ export async function updateSession(request: NextRequest) {
   const isAdminRoute = pathname.startsWith('/admin')
   const isAuthPage = pathname === '/auth/login' || pathname === '/auth/signup'
 
-  const redirectTo = (path: string) => {
+  // Redirects must carry over any Set-Cookie headers written by the Supabase
+  // client (rotated refresh tokens, sign-out deletions) or sessions corrupt.
+  const redirectTo = (path: string, search = '') => {
     const url = request.nextUrl.clone()
     url.pathname = path
-    url.search = ''
-    return NextResponse.redirect(url)
+    url.search = search
+    const response = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
+    return response
   }
 
   if ((isVictimRoute || isAdminRoute) && !user) {
@@ -63,10 +67,7 @@ export async function updateSession(request: NextRequest) {
     // /admin and /dashboard (that redirect-loops and locks the user out).
     if (!role && (isVictimRoute || isAdminRoute)) {
       await supabase.auth.signOut()
-      const url = request.nextUrl.clone()
-      url.pathname = '/auth/login'
-      url.search = '?error=account-setup'
-      return NextResponse.redirect(url)
+      return redirectTo('/auth/login', '?error=account-setup')
     }
 
     const isStaff = ['caseworker', 'admin', 'analyst'].includes(role ?? '')

@@ -5,7 +5,8 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '10mb'
+      // Must fit an 8 MB evidence file + a voice note + form fields together.
+      bodySizeLimit: '20mb'
     }
   }
 }

@@ -73,14 +73,27 @@ export default function CaseDetailsPage() {
   }, [caseNumber])
 
   // Realtime: payloads are encrypted at rest, so events are used as a signal
-  // to refetch the decrypted thread from the server.
+  // to fetch just the new decrypted rows from the server.
+  const lastSeenRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (messages.length > 0) {
+      lastSeenRef.current = messages[messages.length - 1].timestamp.toISOString()
+    }
+  }, [messages])
+
   useEffect(() => {
     if (!caseData?.id) return
     const caseId = caseData.id
 
     const refresh = async () => {
-      const result = await getCaseMessagesAction(caseId)
-      if ('success' in result) setMessages(result.messages.map(toUiMessage))
+      const result = await getCaseMessagesAction(caseId, lastSeenRef.current ?? undefined)
+      if ('success' in result && result.messages.length > 0) {
+        const fresh = result.messages.map(toUiMessage)
+        setMessages((prev) => {
+          const known = new Set(prev.map((m) => m.id))
+          return [...prev, ...fresh.filter((m) => !known.has(m.id))]
+        })
+      }
     }
 
     const channel = supabase

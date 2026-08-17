@@ -102,6 +102,57 @@ CREATE TABLE IF NOT EXISTS public.resources (
 );
 
 -- =========================================================================
+-- Corrective ALTERs: databases created from the legacy db/schema.sql have
+-- these tables already, so the CREATE TABLE IF NOT EXISTS above is skipped
+-- and the schema changes the application depends on must be applied here.
+-- All idempotent.
+-- =========================================================================
+
+ALTER TABLE public.cases ADD COLUMN IF NOT EXISTS ai_active BOOLEAN NOT NULL DEFAULT true;
+UPDATE public.cases SET case_type = 'general_abuse' WHERE case_type IS NULL;
+ALTER TABLE public.cases ALTER COLUMN case_type SET DEFAULT 'general_abuse';
+ALTER TABLE public.cases ALTER COLUMN case_type SET NOT NULL;
+
+-- AI messages have no user row: sender_id must be nullable and 'ai' allowed.
+ALTER TABLE public.case_messages ALTER COLUMN sender_id DROP NOT NULL;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.constraint_column_usage
+    WHERE table_schema = 'public' AND table_name = 'case_messages' AND constraint_name = 'case_messages_sender_role_check'
+  ) THEN
+    ALTER TABLE public.case_messages DROP CONSTRAINT case_messages_sender_role_check;
+  END IF;
+  ALTER TABLE public.case_messages
+    ADD CONSTRAINT case_messages_sender_role_check CHECK (sender_role IN ('victim', 'caseworker', 'ai'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER TABLE public.case_messages
+    ADD CONSTRAINT ai_messages_have_null_sender CHECK (sender_role <> 'ai' OR sender_id IS NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.check_constraints
+    WHERE constraint_schema = 'public' AND constraint_name = 'cases_case_type_check'
+  ) THEN
+    ALTER TABLE public.cases
+      ADD CONSTRAINT cases_case_type_check
+      CHECK (case_type IN ('domestic_violence', 'child_abuse', 'sexual_assault', 'gbv', 'harassment', 'general_abuse', 'other'));
+  END IF;
+EXCEPTION WHEN check_violation THEN
+  -- Legacy rows with out-of-set values: leave the constraint off rather than
+  -- fail the whole migration.
+  NULL;
+END $$;
+
+-- =========================================================================
 -- Helper: current user's role (avoids repeating the subselect; SECURITY
 -- DEFINER so it can read public.users regardless of RLS on that table)
 -- =========================================================================

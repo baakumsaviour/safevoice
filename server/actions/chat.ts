@@ -1,5 +1,6 @@
 'use server'
 
+import { after } from 'next/server'
 import { generateText } from 'ai'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -61,11 +62,21 @@ function toChatMessage(m: { id: string; message_encrypted: string; sender_role: 
   return { id: m.id, text, role, created_at: m.created_at }
 }
 
-/** True if the user may view/participate in this case. */
-function canAccessCase(user: SessionUser, caseRow: Pick<CaseRow, 'victim_id' | 'created_by_user_id' | 'assigned_to'>): boolean {
+/**
+ * View access: the case's victim/creator, or any staff member. Staff must be
+ * able to open unassigned cases to triage and self-assign them (the admin
+ * dashboard lists every case for staff), and analysts have read-only access.
+ */
+function canViewCase(user: SessionUser, caseRow: Pick<CaseRow, 'victim_id' | 'created_by_user_id' | 'assigned_to'>): boolean {
   if (caseRow.victim_id === user.id || caseRow.created_by_user_id === user.id) return true
-  if ((user.role === 'caseworker' || user.role === 'admin') && caseRow.assigned_to === user.id) return true
-  return user.role === 'admin'
+  return user.role === 'caseworker' || user.role === 'admin' || user.role === 'analyst'
+}
+
+/** Send access: the victim, the assigned caseworker, or an admin — not analysts. */
+function canSendToCase(user: SessionUser, caseRow: Pick<CaseRow, 'victim_id' | 'created_by_user_id' | 'assigned_to'>): boolean {
+  if (caseRow.victim_id === user.id || caseRow.created_by_user_id === user.id) return true
+  if (user.role === 'admin') return true
+  return user.role === 'caseworker' && caseRow.assigned_to === user.id
 }
 
 async function fetchCaseById(caseId: string): Promise<CaseRow | null> {
@@ -192,7 +203,8 @@ export async function initializeChatAction(initialMessage: string) {
     })
     if (msgError) throw msgError
 
-    await triggerAIResponse(newCase.id)
+    // AI reply reaches the client via realtime; don't block chat startup on it.
+    after(() => triggerAIResponse(newCase.id))
 
     return { success: true as const, caseId: newCase.id, caseNumber: newCase.case_number }
   } catch (error) {
@@ -212,7 +224,7 @@ export async function sendChatMessageAction(caseId: string, message: string) {
 
     const user = await requireUser()
     const caseRow = await fetchCaseById(caseId)
-    if (!caseRow || !canAccessCase(user, caseRow)) return { error: 'You do not have access to this case.' }
+    if (!caseRow || !canSendToCase(user, caseRow)) return { error: 'You do not have access to this case.' }
 
     const isVictim = caseRow.victim_id === user.id || caseRow.created_by_user_id === user.id
     const senderRole = isVictim ? 'victim' : 'caseworker'
@@ -235,8 +247,11 @@ export async function sendChatMessageAction(caseId: string, message: string) {
 
     if (error || !data) throw error
 
+    // The AI reply is delivered to clients via realtime, not this return
+    // value — run it after the response so a slow model never blocks the
+    // sender's UI.
     if (senderRole === 'victim') {
-      await triggerAIResponse(caseId)
+      after(() => triggerAIResponse(caseId))
     }
 
     return { success: true as const, message: toChatMessage(data) }
@@ -248,18 +263,24 @@ export async function sendChatMessageAction(caseId: string, message: string) {
 
 /** Decrypted message list for a case the caller can access. */
 export async function getCaseMessagesAction(
-  caseId: string
+  caseId: string,
+  afterIso?: string
 ): Promise<ActionError | { success: true; messages: ChatMessage[]; aiActive: boolean }> {
   try {
     const user = await requireUser()
     const caseRow = await fetchCaseById(caseId)
-    if (!caseRow || !canAccessCase(user, caseRow)) return { error: 'You do not have access to this case.' }
+    if (!caseRow || !canViewCase(user, caseRow)) return { error: 'You do not have access to this case.' }
 
-    const { data: messages, error } = await createAdminClient()
+    let query = createAdminClient()
       .from('case_messages')
       .select('id, message_encrypted, sender_role, created_at')
       .eq('case_id', caseId)
       .order('created_at', { ascending: true })
+    // Incremental fetch: realtime subscribers pass their newest timestamp so
+    // each event costs one row, not a full-thread refetch + decrypt.
+    if (afterIso) query = query.gt('created_at', afterIso)
+
+    const { data: messages, error } = await query
     if (error) throw error
 
     return { success: true as const, messages: (messages ?? []).map(toChatMessage), aiActive: caseRow.ai_active }
@@ -288,7 +309,7 @@ export async function getCaseDetailsAction(
       .single()
     if (caseError || !caseData) return { error: 'Case not found.' }
 
-    if (!canAccessCase(user, caseData)) return { error: 'You do not have access to this case.' }
+    if (!canViewCase(user, caseData)) return { error: 'You do not have access to this case.' }
 
     const { data: messages, error: msgError } = await admin
       .from('case_messages')

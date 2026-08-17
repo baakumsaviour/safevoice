@@ -38,21 +38,27 @@ export default function Home() {
     scrollToBottom()
   }, [messages])
 
-  // Refetches the decrypted thread from the server. Messages are stored
+  // Fetches new decrypted messages from the server. Messages are stored
   // encrypted with a server-side key, so realtime payloads act as a
-  // notification and the server action returns the readable thread.
+  // notification and the server action returns the readable rows — only
+  // those newer than the last one we've seen.
+  const lastSeenRef = useRef<string | null>(null)
   const refreshThread = async (caseId: string) => {
-    const result = await getCaseMessagesAction(caseId)
-    if ('success' in result) {
+    const result = await getCaseMessagesAction(caseId, lastSeenRef.current ?? undefined)
+    if ('success' in result && result.messages.length > 0) {
+      lastSeenRef.current = result.messages[result.messages.length - 1].created_at
+      const fresh: Message[] = result.messages.map(m => ({
+        id: m.id,
+        text: m.text,
+        role: m.role,
+        timestamp: new Date(m.created_at),
+      }))
       setMessages(prev => {
-        const systemNotes = prev.filter(m => m.role === 'system' || m.id === 'welcome')
-        const thread: Message[] = result.messages.map(m => ({
-          id: m.id,
-          text: m.text,
-          role: m.role,
-          timestamp: new Date(m.created_at),
-        }))
-        return [...systemNotes, ...thread]
+        const knownIds = new Set(prev.map(m => m.id))
+        const freshTexts = new Set(fresh.map(m => `${m.role}:${m.text}`))
+        // Drop optimistic victim bubbles that the server copy now covers.
+        const kept = prev.filter(m => !(m.role === 'victim' && !m.id.includes('-') && freshTexts.has(`victim:${m.text}`)))
+        return [...kept, ...fresh.filter(m => !knownIds.has(m.id))]
       })
     }
   }

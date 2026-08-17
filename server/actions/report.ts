@@ -29,14 +29,18 @@ const reportSchema = z.object({
   case_type: z.enum(INCIDENT_TYPE_VALUES).default('general_abuse'),
 })
 
+const URGENT_KEYWORDS = ['weapon', 'gun', 'knife', 'kill', 'killing', 'immediate', 'danger', 'bleeding', 'emergency', 'right now', 'suicide']
+const HIGH_KEYWORDS = ['child', 'minor', 'daily', 'threat', 'threats', 'stalk', 'stalking', 'beat', 'beating', 'hit', 'hurt']
+
+// Word-boundary matching: 'skilled' must not match 'kill', 'shirt' not 'hit'.
+function containsKeyword(narrative: string, keywords: string[]): boolean {
+  const lower = narrative.toLowerCase()
+  return keywords.some((kw) => new RegExp(`\\b${kw}\\b`).test(lower))
+}
+
 function calculatePriority(caseType: string, narrative: string): 'low' | 'medium' | 'high' | 'urgent' {
-  const urgentKeywords = ['weapon', 'gun', 'knife', 'kill', 'immediate', 'danger', 'bleeding', 'emergency', 'right now', 'suicide']
-  const highKeywords = ['child', 'minor', 'daily', 'threat', 'stalk', 'beat', 'hit', 'hurt']
-
-  const lowerNarrative = narrative.toLowerCase()
-
-  if (urgentKeywords.some((kw) => lowerNarrative.includes(kw))) return 'urgent'
-  if (caseType === 'child_abuse' || highKeywords.some((kw) => lowerNarrative.includes(kw))) return 'high'
+  if (containsKeyword(narrative, URGENT_KEYWORDS)) return 'urgent'
+  if (caseType === 'child_abuse' || containsKeyword(narrative, HIGH_KEYWORDS)) return 'high'
   if (caseType === 'domestic_violence' || caseType === 'gbv' || caseType === 'sexual_assault') return 'high'
   return 'medium'
 }
@@ -69,9 +73,11 @@ async function resolveReporter(contactInfo?: string): Promise<{ id: string } | {
     userId = anonData.user.id
   }
 
-  const { data: existing } = await admin.from('users').select('id').eq('id', userId).maybeSingle()
+  const { data: existing } = await admin.from('users').select('id, phone_number').eq('id', userId).maybeSingle()
   if (existing) {
-    if (contactInfo) {
+    // Never overwrite an existing contact number with free-text form input —
+    // it may be the only safe way to reach the victim.
+    if (contactInfo && !existing.phone_number) {
       await admin.from('users').update({ phone_number: contactInfo }).eq('id', userId)
     }
   } else {
