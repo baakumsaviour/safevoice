@@ -35,37 +35,48 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard')
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
-  
-  if ((isDashboardRoute || isAdminRoute) && !user) {
+  const pathname = request.nextUrl.pathname
+  const isVictimRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/chat')
+  const isAdminRoute = pathname.startsWith('/admin')
+  const isAuthPage = pathname === '/auth/login' || pathname === '/auth/signup'
+
+  const redirectTo = (path: string) => {
     const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
+    url.pathname = path
+    url.search = ''
     return NextResponse.redirect(url)
   }
 
-  if (user && (isDashboardRoute || isAdminRoute)) {
-    // Fetch user role
+  if ((isVictimRoute || isAdminRoute) && !user) {
+    return redirectTo('/auth/login')
+  }
+
+  if (user && (isVictimRoute || isAdminRoute || isAuthPage)) {
     const { data: userData } = await supabase
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single()
+    const role = userData?.role
 
-    if (isAdminRoute) {
-      if (!userData || !['caseworker', 'admin'].includes(userData.role)) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/dashboard'
-        return NextResponse.redirect(url)
-      }
+    // No profile/role: sign out and send to login — never bounce between
+    // /admin and /dashboard (that redirect-loops and locks the user out).
+    if (!role && (isVictimRoute || isAdminRoute)) {
+      await supabase.auth.signOut()
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth/login'
+      url.search = '?error=account-setup'
+      return NextResponse.redirect(url)
     }
 
-    if (isDashboardRoute) {
-      if (!userData || userData.role !== 'victim') {
-        const url = request.nextUrl.clone()
-        url.pathname = '/admin'
-        return NextResponse.redirect(url)
-      }
+    const isStaff = ['caseworker', 'admin', 'analyst'].includes(role ?? '')
+
+    if (isAdminRoute && !isStaff) return redirectTo('/dashboard')
+    if (isVictimRoute && isStaff) return redirectTo('/admin')
+
+    // Signed-in (non-anonymous) users don't need the login/signup pages.
+    if (isAuthPage && role && !user.is_anonymous) {
+      return redirectTo(isStaff ? '/admin' : '/dashboard')
     }
   }
 

@@ -1,215 +1,317 @@
 'use server'
 
-import { createClient } from '@supabase/supabase-js'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { generateText } from 'ai'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getSessionUser, requireUser, type SessionUser } from '@/server/auth'
+import { encrypt, decrypt } from '@/lib/server/encryption'
+import { generateCaseNumber } from '@/lib/server/case-number'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+export type ChatMessage = {
+  id: string
+  text: string
+  role: 'victim' | 'caseworker' | 'ai'
+  created_at: string
+}
 
-export async function triggerAIResponse(caseId: string) {
-  try {
-    // Check if AI is active
-    const { data: caseData, error: caseError } = await supabaseAdmin
-      .from('cases')
-      .select('ai_active')
-      .eq('id', caseId)
-      .single()
+export type ActionError = { error: string }
 
-    if (caseError || caseData?.ai_active === false) return
+export type CaseDetails = {
+  [key: string]: unknown
+  id: string
+  case_number: string
+  victim_id: string | null
+  created_by_user_id: string
+  assigned_to: string | null
+  ai_active: boolean
+  status: string
+  case_type: string | null
+  incident_location: string | null
+  narrative: string
+}
 
-    // Fetch conversation history
-    const { data: messages, error: msgError } = await supabaseAdmin
-      .from('case_messages')
-      .select('message_encrypted, sender_role')
-      .eq('case_id', caseId)
-      .order('created_at', { ascending: true })
-      .limit(10) // Only take the last 10 messages for context
+type CaseRow = {
+  id: string
+  case_number: string
+  victim_id: string | null
+  created_by_user_id: string
+  assigned_to: string | null
+  ai_active: boolean
+  status: string
+  case_type: string
+  incident_location: string | null
+  narrative_encrypted: string | null
+}
 
-    if (msgError || !messages) return
-
-    const openRouterMessages = [
-      {
-        role: 'system',
-        content: `You are SafeVoice Assistant, a trauma-informed AI responder. 
-Your primary goal is to provide a calming, supportive, and safe environment for victims. 
-Do NOT give medical or legal advice. 
+const AI_SYSTEM_PROMPT = `You are SafeVoice Assistant, a trauma-informed AI responder.
+Your primary goal is to provide a calming, supportive, and safe environment for victims.
+Do NOT give medical or legal advice.
 Acknowledge their courage. Keep responses concise (1-3 sentences max).
 If they indicate immediate life-threatening danger, tell them to call emergency services immediately.
 If their situation is complex or they ask for a human, say you will notify a human caseworker to take over shortly.`
-      },
-      ...messages.map(m => ({
-        role: m.sender_role === 'victim' ? 'user' : 'assistant',
-        content: Buffer.from(m.message_encrypted, 'base64').toString('utf8')
-      }))
-    ]
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'HTTP-Referer': 'http://localhost:3000',
-        'X-Title': 'SafeVoice',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'openrouter/free',
-        messages: openRouterMessages,
-      }),
+function toChatMessage(m: { id: string; message_encrypted: string; sender_role: string; created_at: string }): ChatMessage {
+  let text = decrypt(m.message_encrypted)
+  let role = m.sender_role as ChatMessage['role']
+  // Legacy rows stored AI replies as caseworker messages prefixed with "[AI] ".
+  if (text.startsWith('[AI] ')) {
+    text = text.slice(5)
+    role = 'ai'
+  }
+  return { id: m.id, text, role, created_at: m.created_at }
+}
+
+/** True if the user may view/participate in this case. */
+function canAccessCase(user: SessionUser, caseRow: Pick<CaseRow, 'victim_id' | 'created_by_user_id' | 'assigned_to'>): boolean {
+  if (caseRow.victim_id === user.id || caseRow.created_by_user_id === user.id) return true
+  if ((user.role === 'caseworker' || user.role === 'admin') && caseRow.assigned_to === user.id) return true
+  return user.role === 'admin'
+}
+
+async function fetchCaseById(caseId: string): Promise<CaseRow | null> {
+  const { data } = await createAdminClient()
+    .from('cases')
+    .select('id, case_number, victim_id, created_by_user_id, assigned_to, ai_active, status, case_type, incident_location, narrative_encrypted')
+    .eq('id', caseId)
+    .single()
+  return (data as CaseRow) ?? null
+}
+
+export async function triggerAIResponse(caseId: string): Promise<void> {
+  try {
+    const admin = createAdminClient()
+
+    const { data: caseData } = await admin.from('cases').select('ai_active').eq('id', caseId).single()
+    if (!caseData || caseData.ai_active === false) return
+
+    const { data: messages } = await admin
+      .from('case_messages')
+      .select('id, message_encrypted, sender_role, created_at')
+      .eq('case_id', caseId)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    if (!messages || messages.length === 0) return
+
+    const history = messages
+      .reverse()
+      .map(toChatMessage)
+      .map((m) => ({
+        role: m.role === 'victim' ? ('user' as const) : ('assistant' as const),
+        content: m.text,
+      }))
+
+    const { text } = await generateText({
+      // Plain "provider/model" strings route through the Vercel AI Gateway
+      // using AI_GATEWAY_API_KEY.
+      model: process.env.AI_MODEL || 'openai/gpt-4o-mini',
+      system: AI_SYSTEM_PROMPT,
+      messages: history,
     })
 
-    if (!response.ok) throw new Error('OpenRouter API failed')
+    if (!text) return
 
-    const responseData = await response.json()
-    const aiMessage = responseData.choices[0].message.content
-
-    // Use a special system ID or just use the case's creator ID but mark role as 'caseworker'
-    // To identify AI, we will prepend a specific tag that the frontend will catch, 
-    // or just insert as caseworker so it appears on the right side.
-    const finalAiMessage = `[AI] ${aiMessage}`
-
-    await supabaseAdmin
-      .from('case_messages')
-      .insert({
-        case_id: caseId,
-        sender_id: caseId, // Dummy sender ID since AI doesn't have a user ID. Or we can just use the victim ID as a hack since RLS is bypassed. Let's use the first admin or a dummy UUID.
-        // Wait, schema requires sender_id to exist in users. 
-        // We'll fetch a valid admin or just use the victim's ID but with caseworker role.
-        sender_id: (await supabaseAdmin.from('users').select('id').eq('role', 'victim').limit(1).single()).data?.id,
-        sender_role: 'caseworker',
-        message_encrypted: Buffer.from(finalAiMessage).toString('base64')
-      })
-
+    const { error } = await admin.from('case_messages').insert({
+      case_id: caseId,
+      sender_id: null,
+      sender_role: 'ai',
+      message_encrypted: encrypt(text),
+    })
+    if (error) console.error('[chat] failed to store AI reply:', error)
   } catch (err) {
-    console.error('AI trigger error:', err)
+    console.error('[chat] AI response failed:', err)
   }
 }
 
+/**
+ * Starts an anonymous secure chat: gives the visitor an anonymous auth
+ * session (or reuses their signed-in session), creates a case, stores the
+ * first message, and triggers the AI responder.
+ */
 export async function initializeChatAction(initialMessage: string) {
   try {
-    const cookieStore = await cookies()
-    const supabaseServer = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll() },
-          setAll() {}
-        }
-      }
-    )
-
-    const { data: { user } } = await supabaseServer.auth.getUser()
-    let victimId = ''
-
-    if (user) {
-      victimId = user.id
-    } else {
-      const { data: anonUser, error: userError } = await supabaseAdmin
-        .from('users')
-        .insert({ email: `anon-chat-${Date.now()}@safevoice.local`, role: 'victim' })
-        .select('id')
-        .single()
-
-      if (userError || !anonUser) throw userError
-      victimId = anonUser.id
+    const message = initialMessage?.trim()
+    if (!message || message.length > 4000) {
+      return { error: 'Please enter a message to start the chat.' }
     }
 
-    const caseNumber = 'CAS-' + Math.random().toString(36).substring(2, 8).toUpperCase()
-    
-    const { data: newCase, error: caseError } = await supabaseAdmin
-      .from('cases')
-      .insert({
-        case_number: caseNumber,
-        victim_id: victimId,
-        created_by_user_id: victimId,
-        status: 'open',
-        priority: 'high',
-        case_type: 'general_abuse',
-        narrative_encrypted: Buffer.from("Initiated via live chat").toString('base64'),
-        ai_active: true // default
+    const supabase = await createClient()
+    const admin = createAdminClient()
+
+    let userId: string
+    let email: string | null = null
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      userId = user.id
+      email = user.email ?? null
+    } else {
+      const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
+      if (anonError || !anonData.user) {
+        console.error('[chat] anonymous sign-in failed:', anonError)
+        return { error: 'Failed to start secure chat. Please try again or use the full report form.' }
+      }
+      userId = anonData.user.id
+    }
+
+    const { data: existingProfile } = await admin.from('users').select('id').eq('id', userId).maybeSingle()
+    if (!existingProfile) {
+      const { error: userError } = await admin.from('users').insert({
+        id: userId,
+        email: email ?? `anon-${userId}@safevoice.local`,
+        role: 'victim',
       })
-      .select('id, case_number')
-      .single()
+      if (userError) throw userError
+    }
 
-    if (caseError || !newCase) throw caseError
+    let newCase: { id: string; case_number: string } | null = null
+    for (let attempt = 0; attempt < 3 && !newCase; attempt++) {
+      const { data: inserted, error: caseError } = await admin
+        .from('cases')
+        .insert({
+          case_number: generateCaseNumber(),
+          victim_id: userId,
+          created_by_user_id: userId,
+          status: 'open',
+          priority: 'high',
+          case_type: 'general_abuse',
+          narrative_encrypted: encrypt('Initiated via live chat'),
+          ai_active: true,
+        })
+        .select('id, case_number')
+        .single()
+      if (inserted) newCase = inserted
+      else if (caseError?.code !== '23505') throw caseError
+    }
+    if (!newCase) return { error: 'Failed to start secure chat. Please try again.' }
 
-    const { error: msgError } = await supabaseAdmin
-      .from('case_messages')
-      .insert({
-        case_id: newCase.id,
-        sender_id: victimId,
-        sender_role: 'victim',
-        message_encrypted: Buffer.from(initialMessage).toString('base64')
-      })
-
+    const { error: msgError } = await admin.from('case_messages').insert({
+      case_id: newCase.id,
+      sender_id: userId,
+      sender_role: 'victim',
+      message_encrypted: encrypt(message),
+    })
     if (msgError) throw msgError
 
-    // Trigger AI
     await triggerAIResponse(newCase.id)
 
-    return { success: true, caseId: newCase.id, caseNumber: newCase.case_number, userId: victimId }
+    return { success: true as const, caseId: newCase.id, caseNumber: newCase.case_number }
   } catch (error) {
-    console.error('Chat initialization error:', error)
+    console.error('[chat] initialization error:', error)
     return { error: 'Failed to start secure chat. Please try again or use the full report form.' }
   }
 }
 
-export async function sendChatMessageAction(caseId: string, userId: string, message: string, role: 'victim' | 'caseworker' = 'victim') {
+/**
+ * Sends a message into a case. The sender's identity and role come from the
+ * session, never from the client. Staff replies pause the AI responder.
+ */
+export async function sendChatMessageAction(caseId: string, message: string) {
   try {
-    // If a human caseworker replies, turn off AI
-    if (role === 'caseworker') {
-      await supabaseAdmin.from('cases').update({ ai_active: false }).eq('id', caseId)
+    const text = message?.trim()
+    if (!text || text.length > 4000) return { error: 'Message is empty or too long.' }
+
+    const user = await requireUser()
+    const caseRow = await fetchCaseById(caseId)
+    if (!caseRow || !canAccessCase(user, caseRow)) return { error: 'You do not have access to this case.' }
+
+    const isVictim = caseRow.victim_id === user.id || caseRow.created_by_user_id === user.id
+    const senderRole = isVictim ? 'victim' : 'caseworker'
+    const admin = createAdminClient()
+
+    if (senderRole === 'caseworker' && caseRow.ai_active) {
+      await admin.from('cases').update({ ai_active: false }).eq('id', caseId)
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await admin
       .from('case_messages')
       .insert({
         case_id: caseId,
-        sender_id: userId,
-        sender_role: role,
-        message_encrypted: Buffer.from(message).toString('base64')
+        sender_id: user.id,
+        sender_role: senderRole,
+        message_encrypted: encrypt(text),
       })
-      .select()
+      .select('id, message_encrypted, sender_role, created_at')
       .single()
 
-    if (error) throw error
+    if (error || !data) throw error
 
-    // If victim sent message, trigger AI
-    if (role === 'victim') {
+    if (senderRole === 'victim') {
       await triggerAIResponse(caseId)
     }
 
-    return { success: true, message: data }
+    return { success: true as const, message: toChatMessage(data) }
   } catch (error) {
-    console.error('Send message error:', error)
+    console.error('[chat] send message error:', error)
     return { error: 'Failed to send message.' }
   }
 }
 
-export async function getCaseDetailsAction(caseId: string) {
+/** Decrypted message list for a case the caller can access. */
+export async function getCaseMessagesAction(
+  caseId: string
+): Promise<ActionError | { success: true; messages: ChatMessage[]; aiActive: boolean }> {
   try {
-    // We use caseNumber instead of UUID for the URL parameter currently, let's fetch by case_number
-    const { data: caseData, error: caseError } = await supabaseAdmin
+    const user = await requireUser()
+    const caseRow = await fetchCaseById(caseId)
+    if (!caseRow || !canAccessCase(user, caseRow)) return { error: 'You do not have access to this case.' }
+
+    const { data: messages, error } = await createAdminClient()
+      .from('case_messages')
+      .select('id, message_encrypted, sender_role, created_at')
+      .eq('case_id', caseId)
+      .order('created_at', { ascending: true })
+    if (error) throw error
+
+    return { success: true as const, messages: (messages ?? []).map(toChatMessage), aiActive: caseRow.ai_active }
+  } catch (error) {
+    console.error('[chat] fetch messages error:', error)
+    return { error: 'Failed to load messages.' }
+  }
+}
+
+/**
+ * Case details + decrypted narrative and messages, looked up by case number.
+ * Access: the case's victim/creator, the assigned staff member, or an admin.
+ */
+export async function getCaseDetailsAction(
+  caseNumber: string
+): Promise<ActionError | { success: true; caseData: CaseDetails; messages: ChatMessage[] }> {
+  try {
+    const user = await getSessionUser()
+    if (!user) return { error: 'Please sign in to view this case.' }
+
+    const admin = createAdminClient()
+    const { data: caseData, error: caseError } = await admin
       .from('cases')
       .select('*')
-      .eq('case_number', caseId)
+      .eq('case_number', caseNumber)
       .single()
-      
-    if (caseError || !caseData) throw caseError
+    if (caseError || !caseData) return { error: 'Case not found.' }
 
-    const { data: messages, error: msgError } = await supabaseAdmin
+    if (!canAccessCase(user, caseData)) return { error: 'You do not have access to this case.' }
+
+    const { data: messages, error: msgError } = await admin
       .from('case_messages')
-      .select('*')
+      .select('id, message_encrypted, sender_role, created_at')
       .eq('case_id', caseData.id)
       .order('created_at', { ascending: true })
-
     if (msgError) throw msgError
 
-    return { success: true, caseData, messages }
-  } catch (e) {
+    await admin.from('audit_log').insert({
+      case_id: caseData.id,
+      user_id: user.id,
+      action: 'case_viewed',
+      description: `Case ${caseData.case_number} viewed`,
+    })
+
+    const { narrative_encrypted, ...rest } = caseData
+    return {
+      success: true as const,
+      caseData: { ...rest, narrative: decrypt(narrative_encrypted) } as CaseDetails,
+      messages: (messages ?? []).map(toChatMessage),
+    }
+  } catch (error) {
+    console.error('[chat] case details error:', error)
     return { error: 'Failed to load case' }
   }
 }

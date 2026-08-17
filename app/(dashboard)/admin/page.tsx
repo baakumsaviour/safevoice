@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { AlertCircle, Clock, UserCheck } from 'lucide-react'
+import { AlertCircle, Clock, UserCheck, CheckCircle2 } from 'lucide-react'
 import { getAdminDataAction } from '@/server/actions/admin'
+import { incidentTypeLabel } from '@/constants/incident-types'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,10 +9,39 @@ export const metadata = {
   title: 'Active Cases | Admin',
 }
 
+function StatusBadge({ status }: { status: string }) {
+  if (status === 'open') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-700 caption-strong">
+        <AlertCircle className="w-3.5 h-3.5" /> Needs Triage
+      </span>
+    )
+  }
+  if (status === 'in_progress') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-800 caption-strong">
+        <Clock className="w-3.5 h-3.5" /> In Progress
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 text-green-800 caption-strong">
+      <CheckCircle2 className="w-3.5 h-3.5" /> {status === 'closed' ? 'Closed' : 'Archived'}
+    </span>
+  )
+}
+
 export default async function AdminPage() {
   const result = await getAdminDataAction()
-  const activeCases = result.cases || []
-  const caseworkers = result.caseworkers || []
+  if ('error' in result) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl body-sm">{result.error}</div>
+      </div>
+    )
+  }
+  const activeCases = result.cases
+  const caseworkers = result.caseworkers
   return (
     <div className="p-8">
       <header className="mb-8 flex items-center justify-between">
@@ -22,7 +52,7 @@ export default async function AdminPage() {
       </header>
 
       {/* Analytics Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
          <div className="bg-canvas border border-border rounded-xl p-4 shadow-sm">
             <p className="caption-uppercase text-body mb-1">Total Cases</p>
             <p className="display-sm text-ink">{result.analytics?.totalCases || 0}</p>
@@ -55,19 +85,11 @@ export default async function AdminPage() {
                 </p>
               </div>
               <div className="col-span-3">
-                <p className="body-sm text-ink capitalize">{c.case_type.replace('_', ' ')}</p>
+                <p className="body-sm text-ink capitalize">{incidentTypeLabel(c.case_type)}</p>
                 <p className="caption text-body">{c.incident_location || 'No location'}</p>
               </div>
               <div className="col-span-3">
-                {c.status === 'open' ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-700 caption-strong">
-                    <AlertCircle className="w-3.5 h-3.5" /> Needs Triage
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-800 caption-strong">
-                    <Clock className="w-3.5 h-3.5" /> In Progress
-                  </span>
-                )}
+                <StatusBadge status={c.status} />
                 {c.assigned_user?.full_name && (
                    <p className="caption text-body mt-1 flex items-center gap-1">
                       <UserCheck className="w-3 h-3" /> {c.assigned_user.full_name}

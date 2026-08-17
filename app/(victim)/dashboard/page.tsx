@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { FileText, Clock, AlertCircle } from 'lucide-react'
 import { getVictimCasesAction } from '@/server/actions/victim'
 import { logoutAction } from '@/app/auth/actions'
+import { incidentTypeLabel } from '@/constants/incident-types'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +12,7 @@ export const metadata = {
 
 export default async function VictimDashboardPage() {
   const result = await getVictimCasesAction()
-  const cases = result.success ? result.cases : []
+  const cases = 'success' in result ? result.cases : []
 
   return (
     <main className="min-h-screen bg-canvas-soft py-12 px-6 md:px-12 max-w-5xl mx-auto">
@@ -34,7 +35,7 @@ export default async function VictimDashboardPage() {
         </div>
       </header>
 
-      {result.error && (
+      {'error' in result && (
         <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl body-sm">
           {result.error}
         </div>
@@ -72,14 +73,14 @@ export default async function VictimDashboardPage() {
                      </span>
                   )}
                 </div>
-                <p className="body-sm text-body capitalize mb-1">{c.case_type.replace('_', ' ')}</p>
+                <p className="body-sm text-body capitalize mb-1">{incidentTypeLabel(c.case_type)}</p>
                 <p className="caption text-body flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" /> 
                   Submitted {new Date(c.created_at).toLocaleDateString()}
                 </p>
               </div>
               <div>
-                <Link href={`/dashboard/chat/${c.case_number}`}>
+                <Link href={`/chat/${c.case_number}`}>
                   <button className="w-full md:w-auto bg-ink text-on-dark body-sm py-2 px-6 rounded-full hover:opacity-90 transition-opacity">
                     Open Secure Chat
                   </button>

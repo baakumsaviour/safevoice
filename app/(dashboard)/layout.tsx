@@ -1,7 +1,8 @@
 import { ReactNode } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Shield, Map, MessageSquare, LogOut, Users } from 'lucide-react'
+import { Map, MessageSquare, LogOut, Users } from 'lucide-react'
+import { logoutAction } from '@/app/auth/actions'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -24,7 +25,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <MessageSquare className="w-5 h-5" />
             <span>Active Cases</span>
           </Link>
-          <Link href="/analytics" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors">
+          <Link href="/admin/analytics" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors">
             <Map className="w-5 h-5" />
             <span>Analytics & Map</span>
           </Link>
@@ -35,10 +36,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="p-6 border-t border-white/10">
-          <button className="flex items-center gap-3 text-on-dark/70 hover:text-white transition-colors w-full">
-            <LogOut className="w-5 h-5" />
-            <span>Sign Out</span>
-          </button>
+          <form action={logoutAction}>
+            <button type="submit" className="flex items-center gap-3 text-on-dark/70 hover:text-white transition-colors w-full cursor-pointer">
+              <LogOut className="w-5 h-5" />
+              <span>Sign Out</span>
+            </button>
+          </form>
         </div>
       </aside>
 

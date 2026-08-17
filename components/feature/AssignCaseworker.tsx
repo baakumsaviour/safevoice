@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { assignCaseAction } from '@/server/actions/admin'
 import { UserPlus } from 'lucide-react'
 
-export function AssignCaseworker({ caseId, caseworkers, currentAssignee }: { caseId: string, caseworkers: any[], currentAssignee?: string }) {
+export function AssignCaseworker({ caseId, caseworkers, currentAssignee }: { caseId: string, caseworkers: { id: string; full_name: string | null }[], currentAssignee?: string | null }) {
   const [loading, setLoading] = useState(false)
 
   const handleAssign = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -13,7 +13,7 @@ export function AssignCaseworker({ caseId, caseworkers, currentAssignee }: { cas
     
     setLoading(true)
     const res = await assignCaseAction(caseId, cwId)
-    if (!res.error) {
+    if (!('error' in res)) {
        window.location.reload()
     }
     setLoading(false)

@@ -10,6 +10,7 @@ import { signupAction } from '../actions'
 export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [confirmEmail, setConfirmEmail] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -36,14 +37,35 @@ export default function SignupPage() {
 
     try {
       const res = await signupAction(formData)
-      if (res?.error) {
+      if (res && 'error' in res && res.error) {
         setError(res.error)
+      } else if (res && 'confirmEmail' in res && res.confirmEmail) {
+        setConfirmEmail(true)
       }
-    } catch (err: any) {
+    } catch {
       setError('Failed to create account. Please try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (confirmEmail) {
+    return (
+      <main className="min-h-screen bg-canvas-soft py-12 px-8 flex items-center justify-center">
+        <div className="w-full max-w-md bg-canvas rounded-[12px] p-8 border-2 border-mute/20 text-center">
+          <div className="w-14 h-14 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-7 h-7" />
+          </div>
+          <h1 className="display-sm text-ink mb-2">Check your inbox</h1>
+          <p className="body-md text-body mb-6">
+            We sent a confirmation link to your email. Click it to activate your account, then sign in.
+          </p>
+          <Link href="/auth/login" className="text-primary hover:text-primary/80 font-semibold body-sm">
+            Go to sign in
+          </Link>
+        </div>
+      </main>
+    )
   }
 
   return (

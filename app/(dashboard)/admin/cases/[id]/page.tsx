@@ -4,105 +4,105 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useEffect, useState, useRef } from 'react'
 import { ArrowLeft, Send, Shield, FileText, Bot } from 'lucide-react'
-import { getCaseDetailsAction, sendChatMessageAction } from '@/server/actions/chat'
+import { getCaseDetailsAction, getCaseMessagesAction, sendChatMessageAction, type ChatMessage } from '@/server/actions/chat'
 import { getAdminDataAction } from '@/server/actions/admin'
 import { createClient } from '@/lib/supabase/client'
 import { AssignCaseworker } from '@/components/feature/AssignCaseworker'
+import { incidentTypeLabel } from '@/constants/incident-types'
 
 type Message = {
   id: string
   text: string
-  role: 'victim' | 'caseworker'
-  isAI?: boolean
+  role: 'victim' | 'caseworker' | 'ai'
   timestamp: Date
+}
+
+type CaseView = {
+  id: string
+  case_number: string
+  case_type: string | null
+  status: string
+  ai_active: boolean
+  assigned_to: string | null
+  incident_location: string | null
+  narrative: string
+}
+
+function toUiMessage(m: ChatMessage): Message {
+  return { id: m.id, text: m.text, role: m.role, timestamp: new Date(m.created_at) }
 }
 
 export default function CaseDetailsPage() {
   const params = useParams()
-  const caseId = params.id as string
+  const caseNumber = params.id as string
 
-  const [caseData, setCaseData] = useState<any>(null)
+  const [caseData, setCaseData] = useState<CaseView | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
-  const [caseworkers, setCaseworkers] = useState<any[]>([])
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
+  const [caseworkers, setCaseworkers] = useState<{ id: string; full_name: string | null }[]>([])
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
+  if (!supabaseRef.current) supabaseRef.current = createClient()
+  const supabase = supabaseRef.current
 
   useEffect(() => {
-    scrollToBottom()
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Initial load
   useEffect(() => {
-    // Fetch initial case data and messages
-    Promise.all([getCaseDetailsAction(caseId), getAdminDataAction()]).then(([res, adminRes]) => {
-      if (adminRes.success) {
-         setCaseworkers(adminRes.caseworkers || [])
+    let cancelled = false
+    Promise.all([getCaseDetailsAction(caseNumber), getAdminDataAction()]).then(([res, adminRes]) => {
+      if (cancelled) return
+      if ('success' in adminRes && adminRes.caseworkers) {
+        setCaseworkers(adminRes.caseworkers)
       }
-      
-      if (res.success) {
-        setCaseData(res.caseData)
-        
-        // Map messages
-        const mappedMessages = res.messages.map((m: any) => {
-          const decoded = Buffer.from(m.message_encrypted, 'base64').toString('utf8')
-          const isAI = decoded.startsWith('[AI] ')
-          return {
-            id: m.id,
-            text: isAI ? decoded.replace('[AI] ', '') : decoded,
-            role: m.sender_role,
-            isAI,
-            timestamp: new Date(m.created_at)
-          }
-        })
-        setMessages(mappedMessages)
-
-        // Subscribe to real-time messages
-        const channel = supabase.channel(`case_${res.caseData.id}`)
-          .on('postgres_changes', { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'case_messages',
-            filter: `case_id=eq.${res.caseData.id}`
-          }, (payload) => {
-            // Only append victim messages or AI messages from server
-            if (payload.new.sender_role === 'victim' || payload.new.sender_role === 'caseworker') {
-              const decoded = Buffer.from(payload.new.message_encrypted, 'base64').toString('utf8')
-              const isAI = decoded.startsWith('[AI] ')
-              
-              // Prevent duplicating optimistic UI messages (human caseworker)
-              if (payload.new.sender_role === 'caseworker' && !isAI) return
-
-              setMessages(prev => [...prev, {
-                id: payload.new.id,
-                text: isAI ? decoded.replace('[AI] ', '') : decoded,
-                role: payload.new.sender_role,
-                isAI,
-                timestamp: new Date(payload.new.created_at)
-              }])
-            }
-          })
-          .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'cases',
-            filter: `id=eq.${res.caseData.id}`
-          }, (payload) => {
-             setCaseData((prev: any) => ({ ...prev, ai_active: payload.new.ai_active }))
-          })
-          .subscribe()
-
-        return () => {
-          supabase.removeChannel(channel)
-        }
+      if ('success' in res) {
+        setCaseData(res.caseData as CaseView)
+        setMessages(res.messages.map(toUiMessage))
+      } else {
+        setLoadError(res.error)
       }
     })
-  }, [caseId])
+    return () => {
+      cancelled = true
+    }
+  }, [caseNumber])
+
+  // Realtime: payloads are encrypted at rest, so events are used as a signal
+  // to refetch the decrypted thread from the server.
+  useEffect(() => {
+    if (!caseData?.id) return
+    const caseId = caseData.id
+
+    const refresh = async () => {
+      const result = await getCaseMessagesAction(caseId)
+      if ('success' in result) setMessages(result.messages.map(toUiMessage))
+    }
+
+    const channel = supabase
+      .channel(`case_${caseId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'case_messages', filter: `case_id=eq.${caseId}` },
+        refresh
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'cases', filter: `id=eq.${caseId}` },
+        (payload) => {
+          setCaseData((prev) => (prev ? { ...prev, ai_active: (payload.new as { ai_active: boolean }).ai_active } : prev))
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [caseData?.id, supabase])
 
   const handleSend = async () => {
     if (!input.trim() || isSending || !caseData) return
@@ -111,19 +111,22 @@ export default function CaseDetailsPage() {
     setInput('')
     setIsSending(true)
 
-    const tempId = Date.now().toString()
-    setMessages(prev => [...prev, { id: tempId, text, role: 'caseworker', timestamp: new Date() }])
-    
-    // Optimistically update AI status
-    setCaseData((prev: any) => ({ ...prev, ai_active: false }))
-
-    // For MVP, we simulate caseworker ID since auth is bypassed
-    const mockCaseworkerId = caseData.created_by_user_id 
-
-    await sendChatMessageAction(caseData.id, mockCaseworkerId, text, 'caseworker')
-    setIsSending(false)
+    try {
+      const result = await sendChatMessageAction(caseData.id, text)
+      if ('error' in result) {
+        setInput(text)
+      } else {
+        setCaseData((prev) => (prev ? { ...prev, ai_active: false } : prev))
+        setMessages((prev) => (prev.some((m) => m.id === result.message.id) ? prev : [...prev, toUiMessage(result.message)]))
+      }
+    } finally {
+      setIsSending(false)
+    }
   }
 
+  if (loadError) {
+    return <div className="p-8 h-screen flex items-center justify-center body-md text-mute">{loadError}</div>
+  }
   if (!caseData) {
     return <div className="p-8 h-screen flex items-center justify-center body-md text-mute">Loading secure case details...</div>
   }
@@ -135,16 +138,17 @@ export default function CaseDetailsPage() {
           <ArrowLeft className="w-5 h-5 text-ink" />
         </Link>
         <div>
-          <h1 className="display-xs text-ink font-mono">{caseId}</h1>
+          <h1 className="display-xs text-ink font-mono">{caseNumber}</h1>
           <div className="flex items-center gap-4 mt-1">
-             <p className="body-sm text-body capitalize">{caseData.case_type.replace('_', ' ')} • Status: {caseData.status}</p>
-             <AssignCaseworker caseId={caseData.id} caseworkers={caseworkers} currentAssignee={caseData.assigned_to} />
+            <p className="body-sm text-body capitalize">
+              {incidentTypeLabel(caseData.case_type)} • Status: {caseData.status}
+            </p>
+            <AssignCaseworker caseId={caseData.id} caseworkers={caseworkers} currentAssignee={caseData.assigned_to} />
           </div>
         </div>
       </header>
 
       <div className="flex-1 grid md:grid-cols-3 gap-6 min-h-0">
-        
         {/* Left Column: Details & Evidence */}
         <div className="col-span-1 bg-canvas rounded-2xl border border-border overflow-hidden flex flex-col">
           <div className="p-4 border-b border-border bg-canvas-soft">
@@ -156,12 +160,10 @@ export default function CaseDetailsPage() {
             <div>
               <p className="caption-uppercase text-body mb-2">Narrative</p>
               <div className="bg-canvas-soft p-4 rounded-xl border border-border">
-                <p className="body-sm text-ink font-serif italic">
-                  "{Buffer.from(caseData.narrative_encrypted, 'base64').toString('utf8')}"
-                </p>
+                <p className="body-sm text-ink font-serif italic">&quot;{caseData.narrative}&quot;</p>
               </div>
             </div>
-            
+
             {caseData.incident_location && (
               <div>
                 <p className="caption-uppercase text-body mb-2">Location</p>
@@ -189,51 +191,62 @@ export default function CaseDetailsPage() {
               )}
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-zinc-50/50">
             {messages.length === 0 ? (
               <div className="flex justify-center mb-8">
                 <span className="caption text-body bg-canvas border border-border px-3 py-1 rounded-full">Waiting for messages...</span>
               </div>
             ) : (
-              messages.map((msg) => (
-                <div key={msg.id} className={`flex flex-col gap-1 items-${msg.role === 'caseworker' ? 'end ml-auto' : 'start'} max-w-[80%]`}>
-                  <span className={`caption text-body flex items-center gap-1 ${msg.role === 'caseworker' ? 'mr-2' : 'ml-2'}`}>
-                    {msg.role === 'caseworker' 
-                      ? (msg.isAI ? <><Bot className="w-3 h-3"/> AI Assistant</> : 'You (Caseworker)') 
-                      : 'Victim'}
-                  </span>
-                  <div className={`px-4 py-3 rounded-2xl body-sm shadow-sm ${
-                    msg.role === 'caseworker' 
-                      ? msg.isAI 
-                        ? 'bg-primary/10 border border-primary/20 text-ink rounded-tr-sm' 
-                        : 'bg-ink text-on-dark rounded-tr-sm' 
-                      : 'bg-canvas border border-border text-ink rounded-tl-sm'
-                  }`}>
-                    {msg.text}
+              messages.map((msg) => {
+                const isStaffSide = msg.role !== 'victim'
+                return (
+                  <div key={msg.id} className={`flex flex-col gap-1 max-w-[80%] ${isStaffSide ? 'items-end ml-auto' : 'items-start'}`}>
+                    <span className={`caption text-body flex items-center gap-1 ${isStaffSide ? 'mr-2' : 'ml-2'}`}>
+                      {msg.role === 'ai' ? (
+                        <>
+                          <Bot className="w-3 h-3" /> AI Assistant
+                        </>
+                      ) : msg.role === 'caseworker' ? (
+                        'Caseworker'
+                      ) : (
+                        'Victim'
+                      )}
+                    </span>
+                    <div
+                      className={`px-4 py-3 rounded-2xl body-sm shadow-sm ${
+                        msg.role === 'ai'
+                          ? 'bg-primary/10 border border-primary/20 text-ink rounded-tr-sm'
+                          : msg.role === 'caseworker'
+                            ? 'bg-ink text-on-dark rounded-tr-sm'
+                            : 'bg-canvas border border-border text-ink rounded-tl-sm'
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
             <div ref={messagesEndRef} />
           </div>
 
           <div className="p-4 bg-canvas border-t border-border">
             {caseData.ai_active && (
-               <div className="mb-2 text-center">
-                 <span className="caption text-body">Sending a message will permanently turn off the AI for this case.</span>
-               </div>
+              <div className="mb-2 text-center">
+                <span className="caption text-body">Sending a message will permanently turn off the AI for this case.</span>
+              </div>
             )}
             <div className="flex gap-2">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Type a secure message..." 
+                placeholder="Type a secure message..."
                 className="flex-1 bg-canvas-soft border border-border rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 body-sm"
               />
-              <button 
+              <button
                 onClick={handleSend}
                 disabled={!input.trim() || isSending}
                 className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -243,7 +256,6 @@ export default function CaseDetailsPage() {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   )

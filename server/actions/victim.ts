@@ -1,31 +1,21 @@
 'use server'
 
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 
 export async function getVictimCasesAction() {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll() },
-          setAll() {}
-        }
-      }
-    )
+    const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return { error: 'Not authenticated' }
     }
 
+    // User-scoped client: RLS restricts rows to the caller's own cases.
     const { data, error } = await supabase
       .from('cases')
-      .select('*')
-      .eq('victim_id', user.id)
+      .select('id, case_number, case_type, status, priority, created_at')
+      .or(`victim_id.eq.${user.id},created_by_user_id.eq.${user.id}`)
       .order('created_at', { ascending: false })
 
     if (error) throw error

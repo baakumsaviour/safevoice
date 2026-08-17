@@ -4,29 +4,31 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Shield, Send, AlertCircle, FileText, CheckCircle, Bot } from 'lucide-react'
-import { initializeChatAction, sendChatMessageAction } from '@/server/actions/chat'
+import { initializeChatAction, sendChatMessageAction, getCaseMessagesAction } from '@/server/actions/chat'
 import { createClient } from '@/lib/supabase/client'
+import { QuickEscape } from '@/components/ui/QuickEscape'
 
 type Message = {
   id: string
   text: string
-  role: 'victim' | 'caseworker' | 'system'
-  isAI?: boolean
+  role: 'victim' | 'caseworker' | 'ai' | 'system'
   timestamp: Date
 }
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([
-    { id: 'welcome', text: "Hello. I am the SafeVoice Automated Assistant. You are in a safe, secure space. How can we help you today?", role: 'caseworker', isAI: true, timestamp: new Date() }
+    { id: 'welcome', text: "Hello. I am the SafeVoice Automated Assistant. You are in a safe, secure space. How can we help you today?", role: 'ai', timestamp: new Date() }
   ])
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
-  
+
   // Chat Session State
-  const [chatSession, setChatSession] = useState<{caseId: string, caseNumber: string, userId: string} | null>(null)
-  
+  const [chatSession, setChatSession] = useState<{caseId: string, caseNumber: string} | null>(null)
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
+  if (!supabaseRef.current) supabaseRef.current = createClient()
+  const supabase = supabaseRef.current
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -36,32 +38,38 @@ export default function Home() {
     scrollToBottom()
   }, [messages])
 
+  // Refetches the decrypted thread from the server. Messages are stored
+  // encrypted with a server-side key, so realtime payloads act as a
+  // notification and the server action returns the readable thread.
+  const refreshThread = async (caseId: string) => {
+    const result = await getCaseMessagesAction(caseId)
+    if ('success' in result) {
+      setMessages(prev => {
+        const systemNotes = prev.filter(m => m.role === 'system' || m.id === 'welcome')
+        const thread: Message[] = result.messages.map(m => ({
+          id: m.id,
+          text: m.text,
+          role: m.role,
+          timestamp: new Date(m.created_at),
+        }))
+        return [...systemNotes, ...thread]
+      })
+    }
+  }
+
   // Listen to realtime messages once session starts
   useEffect(() => {
     if (!chatSession?.caseId) return
+    const caseId = chatSession.caseId
 
-    const channel = supabase.channel(`case_${chatSession.caseId}`)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
+    const channel = supabase.channel(`case_${caseId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
         table: 'case_messages',
-        filter: `case_id=eq.${chatSession.caseId}`
-      }, (payload) => {
-        // Only append if it's from the caseworker (to avoid duplicating our own optimistic updates)
-        if (payload.new.sender_role === 'caseworker') {
-          // Decode pseudo-encryption
-          const decoded = Buffer.from(payload.new.message_encrypted, 'base64').toString('utf8')
-          const isAI = decoded.startsWith('[AI] ')
-          const cleanText = isAI ? decoded.replace('[AI] ', '') : decoded
-
-          setMessages(prev => [...prev, {
-            id: payload.new.id,
-            text: cleanText,
-            role: 'caseworker',
-            isAI: isAI,
-            timestamp: new Date(payload.new.created_at)
-          }])
-        }
+        filter: `case_id=eq.${caseId}`
+      }, () => {
+        refreshThread(caseId)
       })
       .subscribe()
 
@@ -83,18 +91,19 @@ export default function Home() {
 
     try {
       if (!chatSession) {
-        // Initialize chat (Creates User & Case)
+        // Initialize chat (creates anonymous session, case & first message)
         const result = await initializeChatAction(text)
-        if (result.error || !result.caseId) {
+        if ('error' in result || !result.caseId) {
           setMessages(prev => [...prev, { id: 'err', text: "Connection error. Please use the Report Form button instead.", role: 'system', timestamp: new Date() }])
         } else {
-          setChatSession({ caseId: result.caseId, caseNumber: result.caseNumber!, userId: result.userId! })
+          setChatSession({ caseId: result.caseId, caseNumber: result.caseNumber })
           setMessages(prev => [...prev, { id: 'sys1', text: `Secure chat established. Your anonymous Case Number is ${result.caseNumber}. Please save this.`, role: 'system', timestamp: new Date() }])
+          await refreshThread(result.caseId)
         }
       } else {
         // Send to existing chat
-        const result = await sendChatMessageAction(chatSession.caseId, chatSession.userId, text, 'victim')
-        if (result.error) {
+        const result = await sendChatMessageAction(chatSession.caseId, text)
+        if ('error' in result) {
           setMessages(prev => [...prev, { id: 'err2', text: "Failed to send message securely.", role: 'system', timestamp: new Date() }])
         }
       }
@@ -129,7 +138,7 @@ export default function Home() {
               <Shield className="w-6 h-6 text-primary shrink-0" />
               <div>
                 <h3 className="body-sm-strong mb-1">100% Confidential</h3>
-                <p className="caption text-on-dark/70 text-balance">This chat is end-to-end encrypted. Your identity is strictly anonymous unless you choose to share it.</p>
+                <p className="caption text-on-dark/70 text-balance">This chat travels over an encrypted connection and is stored encrypted. Your identity stays anonymous unless you choose to share it.</p>
               </div>
             </div>
             <div className="flex gap-4">
@@ -209,7 +218,7 @@ export default function Home() {
             >
               {msg.role !== 'system' && (
                 <div className={`caption text-body mb-1 px-1 flex items-center gap-1 ${msg.role === 'victim' ? 'text-right' : 'text-left'}`}>
-                  {msg.role === 'victim' ? 'You' : (msg.isAI ? <span className="flex items-center gap-1"><Bot className="w-3 h-3"/> SafeVoice Assistant</span> : 'Expert')}
+                  {msg.role === 'victim' ? 'You' : (msg.role === 'ai' ? <span className="flex items-center gap-1"><Bot className="w-3 h-3"/> SafeVoice Assistant</span> : 'Expert')}
                 </div>
               )}
               
@@ -249,7 +258,8 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
+
+      <QuickEscape />
     </main>
   )
 }

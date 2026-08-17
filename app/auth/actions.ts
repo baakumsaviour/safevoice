@@ -1,32 +1,18 @@
 'use server'
 
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+
+const STAFF_ROLES = ['admin', 'caseworker', 'analyst']
 
 export async function loginAction(formData: FormData) {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-  const cookieStore = await cookies()
-  
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-          } catch (_) {}
-        },
-      },
-    }
-  )
+  const email = String(formData.get('email') ?? '').trim()
+  const password = String(formData.get('password') ?? '')
+  if (!email || !password) return { error: 'Please enter your email and password.' }
 
+  const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-  
   if (error) {
     return { error: error.message }
   }
@@ -37,77 +23,61 @@ export async function loginAction(formData: FormData) {
     .eq('id', data.user.id)
     .single()
 
-  if (userRecord?.role === 'admin' || userRecord?.role === 'caseworker') {
-    redirect('/admin')
-  } else {
-    redirect('/dashboard')
+  if (!userRecord) {
+    // Account exists in auth but has no profile/role — don't strand the user
+    // in a redirect loop between /admin and /dashboard.
+    await supabase.auth.signOut()
+    return { error: 'Your account is not fully set up yet. Please contact support.' }
   }
+
+  redirect(STAFF_ROLES.includes(userRecord.role) ? '/admin' : '/dashboard')
 }
 
 export async function signupAction(formData: FormData) {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-  const name = formData.get('name') as string
-  
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-          } catch (_) {}
-        },
-      },
-    }
-  )
+  const email = String(formData.get('email') ?? '').trim()
+  const password = String(formData.get('password') ?? '')
+  const confirmPassword = formData.get('confirmPassword')
+  const name = String(formData.get('name') ?? '').trim()
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'Please enter a valid email address.' }
+  if (password.length < 8) return { error: 'Your password must be at least 8 characters long.' }
+  if (confirmPassword !== null && String(confirmPassword) !== password) {
+    return { error: 'The passwords do not match.' }
+  }
+
+  const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({ email, password })
-
   if (error) {
     return { error: error.message }
   }
 
   if (data.user) {
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-    
-    const { data: existing } = await supabaseAdmin.from('users').select('id').eq('id', data.user.id).single()
-    
+    const admin = createAdminClient()
+    const { data: existing } = await admin.from('users').select('id').eq('id', data.user.id).maybeSingle()
     if (!existing) {
-       await supabaseAdmin.from('users').insert({
-         id: data.user.id,
-         email: email,
-         full_name: name,
-         role: 'victim'
-       })
+      const { error: insertError } = await admin.from('users').insert({
+        id: data.user.id,
+        email,
+        full_name: name || null,
+        role: 'victim',
+      })
+      if (insertError) {
+        console.error('[auth] profile insert failed:', insertError)
+        return { error: 'We could not finish creating your account. Please try again.' }
+      }
     }
+  }
+
+  // With email confirmation enabled there is no session yet.
+  if (!data.session) {
+    return { confirmEmail: true as const }
   }
 
   redirect('/dashboard')
 }
 
 export async function logoutAction() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-          } catch (_) {}
-        },
-      },
-    }
-  )
+  const supabase = await createClient()
   await supabase.auth.signOut()
   redirect('/auth/login')
 }
