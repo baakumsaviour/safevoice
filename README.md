@@ -1,286 +1,54 @@
-# SafeVoice - Trauma-Informed Case Management System
+# SafeVoice — Trauma-Informed Incident Reporting & Case Management
 
-A secure, modern case management system designed specifically for documenting and managing abuse cases with military-grade encryption, trauma-informed design principles, and comprehensive security features.
+SafeVoice helps victims of gender-based violence and child abuse in Ghana report incidents safely — anonymously or with an account — and connects them with caseworkers through a secure chat with an AI first-responder.
 
-## 🔐 Key Features
+## What it does
 
-### Victim Portal (`/report`)
-- **Anonymous Reporting**: Submit cases without creating an account
-- **Trauma-Informed Design**: Minimal navigation, supportive messaging, quick escape button
-- **Quick Escape Button**: One-click emergency exit to safe website (no browser history)
-- **4-Step Form**: Guided experience covering incident details, narrative, evidence, and consent
-- **Voice Recording**: Record your account instead of typing
-- **Evidence Upload**: Secure file upload with client-side encryption
-- **Multi-Language Support**: Ready for internationalization
+- **Anonymous reporting** (`/report`): a 4-step trauma-informed wizard (category → details with voice notes → evidence → review). Anonymous reporters get a real (anonymous) Supabase auth session, so their case stays reachable from the same browser and Realtime works. Case references look like `SV-K3TP-9WQA`.
+- **Secure chat** (`/` and `/chat/[caseNumber]`): live chat that opens a case, answered first by a trauma-informed AI responder (via Vercel AI Gateway) and handed off to a human caseworker the moment one replies.
+- **Staff portal** (`/admin`): case list with triage status, case detail with decrypted narrative and chat, caseworker assignment, user management, analytics stub (`/admin/analytics`).
+- **Quick Escape**: floating button + double-Esc instantly replaces the page with Google and scrubs the tab title/history entry.
 
-### Caseworker Dashboard (`/dashboard`)
-- **Triage Queue**: Prioritized view of new cases
-- **Case Management**: Assign, track, and update case status
-- **Secure Messaging**: Encrypted communication with victims
-- **Case Notes**: Internal documentation with privacy controls
-- **Evidence Tracking**: Manage uploaded files with expiration
-- **Audit Logging**: Complete access and modification history
+## Security model (the honest version)
 
-### Analytics Hub (`/analytics`)
-- **Case Trends**: 30-day visualization of incoming cases
-- **Priority Distribution**: Pie chart breakdown by urgency
-- **Case Type Analysis**: Bar chart of incident categories
-- **Key Metrics**: Total, open, closed, and urgent case counts
-- **Geographic Heatmaps**: Ready for Mapbox GL integration
+- Narratives and chat messages are encrypted at rest with **AES-256-GCM** using a **server-only** `ENCRYPTION_KEY` (`lib/server/encryption.ts`). Transport is HTTPS. This is *not* end-to-end encryption — caseworkers and the AI triage need to read the content — and the UI copy says so truthfully.
+- Every server action authenticates and authorizes first (`server/auth.ts`: `requireUser` / `requireRole`); sender identity and role always come from the session, never from client arguments.
+- Supabase **RLS is enforced** as defense-in-depth (see `supabase/migrations/`): victims see only their cases, caseworkers only assigned ones, storage objects are scoped per case, and users cannot change their own role (trigger-enforced).
+- Evidence uploads: 8 MB cap, MIME allowlist, UUID object keys under the case id (never the case reference), no overwrites.
 
-## 🏗️ Architecture
+## Stack
 
-### Technology Stack
-- **Next.js 16**: Latest React server components and App Router
-- **React 19**: Modern component patterns
-- **TypeScript**: Full type safety
-- **Supabase**: PostgreSQL with Row-Level Security (RLS)
-- **Tailwind CSS 4**: Utility-first styling
-- **shadcn/ui**: Accessible component library
-- **Recharts**: Data visualization
-- **crypto-js**: Client-side encryption
+Next.js 16 (App Router, Server Actions) · TypeScript strict · Tailwind v4 · Supabase (Postgres, Auth with anonymous sign-ins, Storage, Realtime) · AI SDK via Vercel AI Gateway · Playwright · Vercel.
 
-### Security Architecture
-```
-Client Layer
-  ├─ AES-256 Encryption (crypto-js)
-  ├─ Quick Escape Button (window.location.replace)
-  └─ Voice Recorder (WebM format)
-         ↓
-Network Layer (HTTPS)
-         ↓
-Server Layer (Next.js 16)
-  ├─ Server Actions (secure operations)
-  ├─ Middleware (authentication)
-  └─ API Routes (when needed)
-         ↓
-Database Layer (Supabase PostgreSQL)
-  ├─ Row-Level Security (RLS Policies)
-  ├─ Encrypted Columns (at-rest)
-  ├─ Audit Logging (all access)
-  └─ Field Constraints (data integrity)
-```
+## Local development
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+ and pnpm
-- Supabase account (free tier works)
-
-### Setup
-
-1. **Clone and install**:
-   ```bash
-   git clone <repository>
-   cd safevoice
-   pnpm install
-   ```
-
-2. **Configure environment**:
-   ```bash
-   cp .env.example .env.local
-   # Edit .env.local with your Supabase credentials
-   openssl rand -base64 32  # Generate encryption key
-   ```
-
-3. **Setup database**:
-   - Copy `/db/schema.sql` contents
-   - Paste into Supabase SQL Editor
-   - Execute to create all tables with RLS
-
-4. **Run development server**:
-   ```bash
-   pnpm dev
-   ```
-
-5. **Access the app**:
-   - Home: http://localhost:3000
-   - Report: http://localhost:3000/report
-   - Dashboard: http://localhost:3000/dashboard (requires auth)
-   - Analytics: http://localhost:3000/analytics
-
-See [SETUP.md](./SETUP.md) for detailed setup instructions.
-
-## 📁 Project Structure
-
-```
-safevoice/
-├── app/                          # Next.js App Router
-│   ├── (auth)/
-│   │   ├── login/page.tsx       # Caseworker login
-│   │   └── register/page.tsx    # (future) Registration
-│   ├── analytics/               # Analytics hub
-│   ├── dashboard/               # Caseworker portal
-│   │   ├── page.tsx            # Triage queue
-│   │   ├── messages/           # Messaging interface
-│   │   ├── case/[id]/          # Case detail view
-│   │   └── settings/           # User settings
-│   ├── report/                 # Victim reporting portal
-│   ├── layout.tsx              # Root layout
-│   ├── page.tsx                # Home/landing page
-│   └── globals.css             # Global styles
-├── components/
-│   ├── ui/                     # shadcn/ui components
-│   ├── quick-escape-button.tsx # Emergency exit
-│   ├── voice-recorder.tsx      # Audio recording
-│   ├── dashboard-sidebar.tsx   # Nav sidebar
-│   └── ...
-├── lib/
-│   ├── supabase.ts             # Supabase client
-│   ├── encryption.ts           # AES-256 utilities
-│   ├── actions/
-│   │   ├── cases.ts            # Case server actions
-│   │   ├── upload.ts           # Evidence upload
-│   │   └── ...
-│   ├── hooks/
-│   │   └── use-realtime-cases.ts  # Real-time subscriptions
-│   └── utils.ts
-├── db/
-│   └── schema.sql              # Database schema & RLS
-├── middleware.ts               # Auth middleware
-├── .env.example                # Environment variables template
-├── SETUP.md                    # Setup instructions
-├── DEPLOYMENT.md               # Deployment guide
-└── package.json
-```
-
-## 🔒 Security Features
-
-### Encryption
-- **Client-side**: Narratives encrypted with AES-256 before transmission
-- **In Transit**: HTTPS/TLS for all communications
-- **At Rest**: Data encrypted in Supabase storage
-
-### Access Control
-- **Row-Level Security**: Victims see own cases, caseworkers see assigned cases, admins see all
-- **Role-Based**: victim, caseworker, admin, analyst roles
-- **Middleware**: Protected routes require authentication
-
-### Audit Trail
-- Complete logging of all case access
-- User, timestamp, action, and description tracked
-- IP address and user agent captured
-- Compliance-ready reporting
-
-### Data Protection
-- Evidence expires 90 days after case closure
-- Evidence locking mechanism for critical files
-- Quick escape button uses `window.location.replace()` (no history)
-- Automatic cleanup of archived case data
-
-## 🌐 Environment Variables
-
-Required:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-NEXT_PUBLIC_ENCRYPTION_KEY=your-encryption-key
-```
-
-Optional:
-```env
-NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=your-mapbox-token
-```
-
-## 📊 Database Schema
-
-### Core Tables
-- **cases**: Case management with encryption support
-- **case_messages**: Secure messaging between parties
-- **case_notes**: Internal caseworker documentation
-- **evidence**: File tracking and expiration
-- **audit_log**: Compliance and security logging
-- **resources**: Support resources (offline-first)
-- **users**: User profiles and roles
-
-All tables include Row-Level Security policies for fine-grained access control.
-
-## 🚢 Deployment
-
-### Vercel (Recommended)
-1. Push code to GitHub
-2. Connect repository to Vercel
-3. Add environment variables
-4. Deploy (automatic on push)
-
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions and production checklist.
-
-## 📈 Performance
-
-### Optimizations Included
-- Turbopack bundling (Next.js 16)
-- React Server Components for reduced JS
-- Image optimization with next/image
-- Database indexes for common queries
-- Real-time subscriptions with Supabase
-
-### Monitoring
-- Vercel Analytics integration
-- Optional Sentry error tracking
-- Database performance monitoring
-
-## 🧪 Testing
+Prereqs: Node 20+, pnpm, Docker, Supabase CLI.
 
 ```bash
-# Run tests
-pnpm test
-
-# Run linter
-pnpm lint
-
-# Type check
-pnpm type-check
+pnpm install
+supabase start            # local Postgres/Auth/Storage/Realtime + applies migrations & seed
+# create .env.local with the keys `supabase status` prints:
+#   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY=<ANON_KEY>
+#   SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY>
+#   ENCRYPTION_KEY=$(openssl rand -base64 32)
+#   AI_GATEWAY_API_KEY=<your key>   # optional; chat AI silently skips without it
+pnpm dev
 ```
 
-## 📚 Additional Resources
+Seeded local staff accounts (local stack only): `admin@safevoice.local` / `worker@safevoice.local`, password `password123`.
 
-- [Setup Guide](./SETUP.md) - Detailed setup instructions
-- [Deployment Guide](./DEPLOYMENT.md) - Production deployment
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Supabase Documentation](https://supabase.com/docs)
-- [Tailwind CSS](https://tailwindcss.com)
+## Tests
 
-## 🤝 Contributing
+```bash
+npx playwright test        # e2e: report wizard, chat, auth redirects, admin round-trip
+AI_E2E=1 npx playwright test tests/ai-chat.spec.ts   # AI reply test (needs funded AI Gateway)
+```
 
-This project is designed for organizations supporting survivors of abuse. We welcome contributions that improve security, accessibility, and user experience.
+## Production deployment
 
-## 📄 License
+See `docs/RECOVERY_RUNBOOK.md` — the Supabase project must be restored/recreated, **all previously committed keys rotated**, anonymous sign-ins enabled, migrations pushed (`supabase db push`), and env vars set in Vercel (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ENCRYPTION_KEY`, `AI_GATEWAY_API_KEY`, optional `AI_MODEL`).
 
-MIT - See LICENSE file for details
+## Deferred (tracked, not built)
 
-## ⚠️ Important
-
-### For Production Use
-- Enable Supabase email verification
-- Configure custom SMTP for emails
-- Set up automated backups
-- Enable row-level security verification
-- Implement HIPAA/GDPR compliance measures
-- Regular security audits recommended
-- Use strong encryption keys
-- Implement rate limiting
-
-### Privacy & Compliance
-- Transparent data handling
-- User consent management
-- GDPR-compliant data retention
-- HIPAA support for healthcare data
-- Compliance audit logging
-
-## 🆘 Support
-
-For issues, security concerns, or feature requests:
-1. Check documentation
-2. Review issue tracker
-3. Contact security team for security issues
-
-## 🙏 Acknowledgments
-
-SafeVoice is built with care for survivors. Special thanks to:
-- Trauma-informed design principles
-- Organizations supporting survivors
-- Open-source community
-
----
-
-**Built with Next.js 16, Supabase, and ❤️**
+PWA/offline queue, SMS/USSD reporting, Mapbox heatmaps with real geo data, 30-day evidence expiry job, staff MFA, rate limiting.

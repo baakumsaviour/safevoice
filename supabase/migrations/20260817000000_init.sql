@@ -343,6 +343,16 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON public.audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp ON public.audit_log(timestamp);
 
 -- =========================================================================
+-- Grants (objects created in migrations don't inherit the platform's
+-- default privileges; RLS still governs anon/authenticated access)
+-- =========================================================================
+
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
+
+-- =========================================================================
 -- Realtime (never DROP the publication — additive only)
 -- =========================================================================
 

@@ -57,7 +57,7 @@
 
 ### Success Criteria
 - User can signup and login
-- Admin can login with email: sbaakum@gmail.com, password: 00000000
+- Admin can login with email: <provisioned-via-supabase>, Password: <rotated — see docs/RECOVERY_RUNBOOK.md>
 - Routes are properly protected
 - Session persists across page reloads
 
@@ -317,8 +317,8 @@
 
 ## Admin Credentials
 ```
-Email: sbaakum@gmail.com
-Password: 00000000
+Email: <provisioned-via-supabase>
+Password: <rotated — see docs/RECOVERY_RUNBOOK.md>
 Login Path: /auth/login (or /auth/admin-login for unique link)
 Dashboard: /admin
 ```

@@ -40,7 +40,7 @@ SafeVoice has been redesigned to focus on simplicity, user safety, and image-hea
 #### Sign In (`/app/auth/login/page.tsx`)
 - Simplified from previous version
 - Email and password fields only
-- Admin credentials: `sbaakum@gmail.com` / `00000000`
+- Admin credentials: `<provisioned-via-supabase>` / `<rotated>`
 - Routes admin to `/admin` dashboard
 - Routes regular users to `/report` flow
 - Link to signup page
@@ -128,8 +128,8 @@ SafeVoice has been redesigned to focus on simplicity, user safety, and image-hea
 
 ## Admin Credentials
 ```
-Email: sbaakum@gmail.com
-Password: 00000000
+Email: <provisioned-via-supabase>
+Password: <rotated — see docs/RECOVERY_RUNBOOK.md>
 Route: /admin (after login)
 ```
 

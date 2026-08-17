@@ -46,8 +46,8 @@ pnpm start
 ## Admin Credentials
 
 ```
-Email:    sbaakum@gmail.com
-Password: 00000000
+Email:    <provisioned-via-supabase>
+Password: <rotated — see docs/RECOVERY_RUNBOOK.md>
 Login:    /auth/login
 Path:     /admin (after login)
 ```
@@ -378,8 +378,8 @@ import Image from 'next/image'
    - Check image loading
 
 3. **Admin Access**
-   - Email: sbaakum@gmail.com
-   - Password: 00000000
+   - Email: <provisioned-via-supabase>
+   - Password: <rotated — see docs/RECOVERY_RUNBOOK.md>
    - Should see `/admin` page
 
 ### Automated Testing

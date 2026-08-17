@@ -1,39 +1,36 @@
 import { test, expect } from '@playwright/test';
 
-test('successfully submit a report and see success message', async ({ page }) => {
-  // Go to the report page
+test('submit an anonymous report through the 4-step wizard', async ({ page }) => {
   await page.goto('/report');
 
-  // Verify we're on the right page
   await expect(page.locator('h1').filter({ hasText: 'Submit a Report' })).toBeVisible();
 
-  // 1. Fill narrative
-  await page.fill('textarea[name="narrative"]', 'This is a test report narrative providing more than 10 characters to satisfy validation.');
+  // Step 1: pick an incident category
+  await page.getByRole('button', { name: /Harassment & Stalking/ }).click();
+  await page.getByRole('button', { name: /Next: Incident Details/ }).click();
 
-  // 2. Select case type
-  await page.selectOption('select[name="case_type"]', 'harassment');
+  // Step 2: narrative + optional details
+  await page
+    .getByPlaceholder(/I want to report an incident involving/)
+    .fill('This is a test report narrative providing more than 10 characters to satisfy validation.');
+  await page.getByRole('button', { name: /Next: Attach Evidence/ }).click();
 
-  // 3. Fill location and date
-  await page.fill('input[name="incident_location"]', 'Test City Location');
-  await page.fill('input[name="incident_date"]', '2026-06-30');
+  // Step 3: no files
+  await page.getByRole('button', { name: /Next: Review & Submit/ }).click();
 
-  // 4. Fill contact info
-  await page.fill('input[name="contact_info"]', 'test-e2e-user@example.com');
+  // Step 4: contact + consent (checked by default) + submit
+  await page.getByPlaceholder('Phone number, WhatsApp, or secure email').fill('test-e2e-user@example.com');
+  await page.getByRole('button', { name: /Submit Secure Report/ }).click();
 
-  // Consent checkbox is default checked, but let's ensure it's checked
-  const consentCheckbox = page.locator('input[name="consent_given"]');
-  await expect(consentCheckbox).toBeChecked();
+  await expect(page.locator('h2').filter({ hasText: 'Report Submitted Safely' })).toBeVisible({ timeout: 15000 });
 
-  // Submit the form
-  const submitButton = page.locator('button[type="submit"]');
-  await submitButton.click();
+  // Case reference in the new format SV-XXXX-XXXX
+  await expect(page.locator('code').filter({ hasText: /SV-[A-Z2-9]{4}-[A-Z2-9]{4}/ })).toBeVisible();
+});
 
-  // Wait for the success state
-  // The success UI shows "Report Submitted Safely"
-  const successHeading = page.locator('h2').filter({ hasText: 'Report Submitted Safely' });
-  await expect(successHeading).toBeVisible({ timeout: 10000 }); // allow up to 10s for DB insertion
-
-  // Check that a case number is displayed (CAS-XXXXXX)
-  const caseNumberText = page.locator('p').filter({ hasText: /CAS-[A-Z0-9]{6}/ });
-  await expect(caseNumberText).toBeVisible();
+test('report submission is blocked without a narrative', async ({ page }) => {
+  await page.goto('/report');
+  await page.getByRole('button', { name: /Next: Incident Details/ }).click();
+  await page.getByRole('button', { name: /Next: Attach Evidence/ }).click();
+  await expect(page.getByText(/at least 10 characters/)).toBeVisible();
 });

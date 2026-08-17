@@ -14,8 +14,7 @@
 - Mobile-responsive with image-heavy layout
 
 #### 2. **Authentication Pages** ✓
-- **Login Page:** Simplified, user-friendly with admin backdoor
-  - Admin credentials: `sbaakum@gmail.com` / `00000000`
+- **Login Page:** Simplified, user-friendly (staff accounts are provisioned via Supabase, no shared credentials)
 - **Signup Page:** Clean registration form with validation
 - Both pages use consistent design system
 
@@ -271,11 +270,7 @@ Commit 3: 99da9c6
 
 ## 🎯 Admin Access
 
-```
-Route:    /auth/login (then redirects to /admin)
-Email:    sbaakum@gmail.com
-Password: 00000000
-```
+Staff accounts are provisioned through Supabase (see docs/RECOVERY_RUNBOOK.md). No shared credentials are stored in this repo.
 
 ---
 
