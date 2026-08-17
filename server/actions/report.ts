@@ -15,10 +15,30 @@ const reportSchema = z.object({
   narrative: z.string().min(10, "Please provide more details about the incident."),
   incident_date: z.string().optional(),
   incident_location: z.string().optional(),
+  incident_region: z.string().optional(),
+  incident_district: z.string().optional(),
   contact_info: z.string().optional(), // email or phone, optional
   consent_given: z.boolean().default(true),
   case_type: z.string().optional().default('general_abuse')
 })
+
+function calculatePriority(caseType: string, narrative: string): 'low' | 'medium' | 'high' | 'urgent' {
+  const urgentKeywords = ['weapon', 'gun', 'knife', 'kill', 'immediate', 'danger', 'bleeding', 'emergency', 'right now', 'suicide']
+  const highKeywords = ['child', 'minor', 'daily', 'threat', 'stalk', 'beat', 'hit', 'hurt']
+  
+  const lowerNarrative = narrative.toLowerCase()
+  
+  if (urgentKeywords.some(kw => lowerNarrative.includes(kw))) {
+    return 'urgent'
+  }
+  if (caseType === 'child_abuse' || highKeywords.some(kw => lowerNarrative.includes(kw))) {
+    return 'high'
+  }
+  if (caseType === 'domestic_violence' || caseType === 'gbv' || caseType === 'sexual_assault') {
+    return 'high'
+  }
+  return 'medium'
+}
 
 export async function submitReportAction(formData: FormData) {
   try {
@@ -35,13 +55,18 @@ export async function submitReportAction(formData: FormData) {
 
     const data = parsed.data
     const evidenceFile = formData.get('evidence_file') as File | null
+    const audioFile = formData.get('audio_file') as File | null
 
     // We use service role to bypass RLS since the user might be completely anonymous
     // MVP pseudo-encryption for highly sensitive fields
     const encryptedNarrative = Buffer.from(data.narrative).toString('base64') 
 
     const caseNumber = 'CAS-' + Math.random().toString(36).substring(2, 8).toUpperCase()
+    const priority = calculatePriority(data.case_type, data.narrative)
     
+    const locationParts = [data.incident_region, data.incident_district, data.incident_location].filter(Boolean)
+    const fullLocation = locationParts.length > 0 ? locationParts.join(', ') : null
+
     const cookieStore = await cookies()
     const supabaseServer = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -87,11 +112,11 @@ export async function submitReportAction(formData: FormData) {
         created_by_user_id: victimId,
         narrative_encrypted: encryptedNarrative,
         incident_date: data.incident_date || null,
-        incident_location: data.incident_location || null,
+        incident_location: fullLocation,
         consent_given: data.consent_given,
         case_type: data.case_type,
         status: 'open',
-        priority: 'medium'
+        priority: priority
       })
       .select('id, case_number')
       .single()
@@ -101,17 +126,25 @@ export async function submitReportAction(formData: FormData) {
       return { error: 'Failed to submit report. Please try again.' }
     }
 
-    // Handle Evidence Upload if a file was provided
+    // Collect files to upload (both standard evidence file and audio note if provided)
+    const filesToUpload: File[] = []
     if (evidenceFile && evidenceFile.size > 0 && evidenceFile.name !== 'undefined') {
-      const storagePath = await uploadEvidenceFile(evidenceFile, caseNumber)
+      filesToUpload.push(evidenceFile)
+    }
+    if (audioFile && audioFile.size > 0 && audioFile.name !== 'undefined') {
+      filesToUpload.push(audioFile)
+    }
+
+    // Upload files and record in DB
+    for (const file of filesToUpload) {
+      const storagePath = await uploadEvidenceFile(file, caseNumber)
       if (storagePath) {
-        // Record the evidence in the DB
         await supabaseAdmin.from('evidence').insert({
           case_id: newCase.id,
-          file_name: evidenceFile.name,
+          file_name: file.name || 'evidence_file',
           file_path: storagePath,
-          file_type: evidenceFile.type,
-          file_size: evidenceFile.size,
+          file_type: file.type || 'application/octet-stream',
+          file_size: file.size,
           uploaded_by: victimId
         })
       }
@@ -123,4 +156,3 @@ export async function submitReportAction(formData: FormData) {
     return { error: 'An unexpected error occurred.' }
   }
 }
-
