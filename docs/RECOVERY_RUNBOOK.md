@@ -93,10 +93,68 @@ the cloud project, local dev reads and writes real cloud data.
 the old wording so no code changes were needed; `@supabase/supabase-js` v2.107
 accepts either key scheme.
 
-Vercel (production): Project → Settings → Environment Variables, set:
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-`SUPABASE_SERVICE_ROLE_KEY`, `ENCRYPTION_KEY`, `AI_GATEWAY_API_KEY`,
-`AI_MODEL` (optional, defaults to `openai/gpt-4o-mini`). Redeploy.
+### Vercel
+
+Project `olitech1010s-projects/safevoice`
+(`prj_CLCBNFhDMTZSARPN3roIWN9blTfT`), hobby plan, production URL
+`https://safevoice-olitech1010s-projects.vercel.app`. Linked locally with
+`vercel link --project safevoice`; the CLI is already authenticated as
+`olitech1010`, so no OAuth is needed for env or deploy work.
+
+**Every production deployment has failed for 48 days.** The last five
+production builds are all `Error` at 4–5s. Root cause from the build log:
+
+```
+ERR_PNPM_OUTDATED_LOCKFILE  Cannot install with "frozen-lockfile"
+  * 2 dependencies were added: @playwright/test@^1.61.1, dotenv@^17.4.2
+```
+
+Vercel CI passes `--frozen-lockfile`, so a stale lockfile fails the build
+before Next.js ever runs. **This is now fixed** — `pnpm install
+--frozen-lockfile --dry-run` reports "pnpm-lock.yaml is up to date". Any
+lockfile-affecting change to `package.json` must be committed together with a
+regenerated `pnpm-lock.yaml`, or production breaks again the same way.
+
+Related hazard: **both `package-lock.json` and `pnpm-lock.yaml` are tracked.**
+Vercel resolves the ambiguity by choosing pnpm, and `package-lock.json` is
+older and stale. Pick one package manager and delete the other lockfile;
+otherwise an `npm install` can silently resolve a different dependency tree
+than the one that gets deployed.
+
+Env vars set on 2026-08-17 (Production + Preview):
+
+| Var | State |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | repointed to the new project |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | repointed to the new `sb_publishable_…` key |
+| `ENCRYPTION_KEY` | **added** — was missing entirely, which crashed production outright (`getKey()` throws when `NODE_ENV === 'production'`). Store the value in a password manager: if it is lost, every encrypted row becomes permanently unreadable. |
+
+Still stale on Vercel, all 48 days old and pointing at the dead project:
+
+- `SUPABASE_SERVICE_ROLE_KEY` — **must** be replaced with the new
+  `sb_secret_…` key before production can work.
+- `AI_GATEWAY_API_KEY` — the burned `vck_…` key that was committed to git.
+  Revoke and reissue.
+- `NEXT_PUBLIC_ENCRYPTION_KEY` — a pre-takeover leftover with a dangerous name.
+  No code references it, so Next.js never inlines it into the client bundle and
+  it is inert, but delete it so nobody revives the pattern.
+- `OPENROUTER_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+  `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_JWT_SECRET`,
+  `POSTGRES_*`, `NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL` — none are read by
+  application code. Legacy Supabase-integration wiring; safe to remove.
+
+`NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` **is** used, by the admin analytics map.
+
+Note that `vercel env pull` writes `[SENSITIVE]` in place of real values, so it
+is not a usable backup — removing a Vercel env var destroys its value.
+
+Deploy with `vercel deploy` (preview) and `vercel deploy --prod` (production).
+A preview built green on 2026-08-17 against the new project: `/`, `/report`,
+`/auth/login` and `/auth/signup` all return 200, and `/admin` correctly 307s to
+`/auth/login`. **Production was deliberately not promoted** — until
+`SUPABASE_SERVICE_ROLE_KEY` is replaced, report submission and chat would fail
+at runtime, and a reporting form that silently loses a survivor's report is
+worse than an obviously unfinished site.
 
 ## 4. (Optional) purge secrets from git history
 
