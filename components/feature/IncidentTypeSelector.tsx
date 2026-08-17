@@ -1,9 +1,10 @@
 'use client'
 
-import { ShieldAlert, Home, HeartHandshake, Users, MessageSquareWarning, HelpCircle } from 'lucide-react'
+import { ShieldAlert, Home, HeartHandshake, Users, MessageSquareWarning, HelpCircle, ShieldQuestion } from 'lucide-react'
+import type { IncidentTypeValue } from '@/constants/incident-types'
 
 export interface IncidentType {
-  value: string
+  value: IncidentTypeValue
   label: string
   description: string
   icon: React.ComponentType<{ className?: string }>
@@ -23,9 +24,15 @@ export const INCIDENT_TYPES: IncidentType[] = [
     icon: HeartHandshake,
   },
   {
+    value: 'sexual_assault',
+    label: 'Sexual Assault',
+    description: 'Any sexual act or contact that happened without your consent.',
+    icon: ShieldQuestion,
+  },
+  {
     value: 'gbv',
     label: 'Gender-Based Violence (GBV)',
-    description: 'Harm directed at an individual based on gender, sexual assault, or coercion.',
+    description: 'Harm directed at an individual based on gender or coercion.',
     icon: Users,
   },
   {

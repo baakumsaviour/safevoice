@@ -10,7 +10,9 @@ interface EvidenceUploaderProps {
   onRemoveRecordedAudio?: () => void
 }
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+// Must match MAX_UPLOAD_BYTES in lib/supabase/storage.ts and stay under the
+// Server Action bodySizeLimit in next.config.mjs.
+const MAX_FILE_SIZE = 8 * 1024 * 1024 // 8 MB
 
 export function EvidenceUploader({
   selectedFile,
@@ -36,7 +38,8 @@ export function EvidenceUploader({
   const validateAndSetFile = (file: File) => {
     setError(null)
     if (file.size > MAX_FILE_SIZE) {
-      setError('File size exceeds the 50MB maximum limit. Please choose a smaller file.')
+      setError('File size exceeds the 8 MB maximum limit. Please choose a smaller file.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
     onFileSelect(file)
@@ -85,7 +88,7 @@ export function EvidenceUploader({
       <div>
         <h3 className="body-lg-strong text-ink mb-1">Attach Supporting Evidence (Optional)</h3>
         <p className="body-sm text-body">
-          You can attach photos, documents, audio recordings, or videos. All files are encrypted before storage to protect your identity and safety.
+          You can attach photos, documents, audio recordings, or videos. Files are transmitted over an encrypted connection and stored in private, access-controlled storage.
         </p>
       </div>
 
@@ -95,8 +98,8 @@ export function EvidenceUploader({
           <Lock className="w-4 h-4" />
         </div>
         <div className="body-sm">
-          <span className="font-semibold text-ink">End-to-End Encryption: </span>
-          <span className="text-body">Your files are securely transmitted over HTTPS and stored encrypted at rest. Only authorized caseworkers can view them.</span>
+          <span className="font-semibold text-ink">Private & Protected: </span>
+          <span className="text-body">Your files are securely transmitted over HTTPS and stored in private storage encrypted at rest. Only authorized caseworkers can view them.</span>
         </div>
       </div>
 
@@ -194,7 +197,7 @@ export function EvidenceUploader({
             ref={fileInputRef}
             type="file"
             onChange={handleFileChange}
-            accept="image/*,audio/*,video/*,.pdf,.doc,.docx"
+            accept="image/*,audio/*,video/mp4,.pdf"
             className="hidden"
           />
 
@@ -206,7 +209,7 @@ export function EvidenceUploader({
             Click to upload or drag and drop
           </p>
           <p className="body-sm text-body mb-3 max-w-sm mx-auto">
-            Supported files: Images (JPG, PNG), Documents (PDF, DOCX), Audio, and Videos up to 50MB.
+            Supported files: Images (JPG, PNG), PDF documents, audio, and MP4 video — up to 8 MB each.
           </p>
           <span className="inline-block bg-canvas border border-border text-ink body-sm py-2 px-6 rounded-full hover:bg-canvas-soft transition-colors font-medium">
             Browse Files

@@ -37,7 +37,7 @@ const STEPS: StepItem[] = [
 export function ReportForm() {
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [successData, setSuccessData] = useState<{ caseNumber: string } | null>(null)
+  const [successData, setSuccessData] = useState<{ caseNumber: string; warnings: string[] } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -57,11 +57,16 @@ export function ReportForm() {
 
   const maxDate = new Date().toISOString().split('T')[0]
 
-  const handleCopyCaseNumber = () => {
-    if (successData?.caseNumber) {
-      navigator.clipboard.writeText(successData.caseNumber)
+  const handleCopyCaseNumber = async () => {
+    if (!successData?.caseNumber) return
+    try {
+      await navigator.clipboard.writeText(successData.caseNumber)
       setCopied(true)
       setTimeout(() => setCopied(false), 3000)
+    } catch {
+      // Clipboard unavailable (permissions / insecure context) — leave the
+      // button as "Copy" so the user knows to copy the code manually.
+      setCopied(false)
     }
   }
 
@@ -118,20 +123,24 @@ export function ReportForm() {
       formData.append('audio_file', audioFile)
     }
 
-    const result = await submitReportAction(formData)
+    try {
+      const result = await submitReportAction(formData)
 
-    if (result.error) {
+      if ('error' in result) {
+        setError(result.error)
+      } else {
+        setSuccessData({ caseNumber: result.caseNumber, warnings: result.warnings })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    } catch {
+      // Server Action transport failure (network drop, file too large, 500).
       setError(
-        typeof result.error === 'string'
-          ? result.error
-          : 'Please fill in all required fields correctly.'
+        'We could not submit your report — the connection failed or an attached file was too large. ' +
+          'Your answers are still here: please check your files (8 MB max each) and try again.'
       )
-    } else if (result.success && result.caseNumber) {
-      setSuccessData({ caseNumber: result.caseNumber })
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } finally {
+      setIsSubmitting(false)
     }
-
-    setIsSubmitting(false)
   }
 
   if (successData) {
@@ -142,14 +151,26 @@ export function ReportForm() {
         </div>
         <h2 className="display-xs text-ink mb-2">Report Submitted Safely</h2>
         <p className="body-md text-body mb-8 max-w-md mx-auto">
-          Your voice has been heard. Our trauma-informed professionals have securely received your encrypted report and will begin triaging it immediately.
+          Your voice has been heard. Our trauma-informed professionals have securely received your report and will begin triaging it immediately.
         </p>
+
+        {successData.warnings.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl mb-6 text-left text-sm max-w-md mx-auto">
+            <p className="font-semibold mb-1">Your report was saved, but some attachments were not:</p>
+            <ul className="list-disc pl-5 space-y-0.5">
+              {successData.warnings.map((w, i) => (
+                <li key={i}>{w}</li>
+              ))}
+            </ul>
+            <p className="mt-2">Please keep your copies — a caseworker can help you attach them later.</p>
+          </div>
+        )}
 
         <div className="bg-canvas p-6 md:p-8 rounded-2xl border-2 border-primary/20 mb-8 max-w-md mx-auto text-left shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="caption-strong text-primary uppercase tracking-wider">Reference Code</span>
             <span className="bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
-              <Lock className="w-3 h-3" /> Encrypted
+              <Lock className="w-3 h-3" /> Confidential
             </span>
           </div>
           
@@ -242,7 +263,7 @@ export function ReportForm() {
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="body-sm-strong text-ink">Prefer speaking instead of typing?</h4>
-                  <p className="caption text-body">Record a secure audio note. It will be encrypted and sent alongside your narrative.</p>
+                  <p className="caption text-body">Record a secure audio note. It is sent over an encrypted connection and stored securely alongside your narrative.</p>
                 </div>
               </div>
               <VoiceRecorder
@@ -271,7 +292,7 @@ export function ReportForm() {
                 placeholder="I want to report an incident involving... (minimum 10 characters)"
               />
               <div className="flex justify-between items-center mt-1.5 caption text-body">
-                <span>Your words are encrypted in your browser before transmission.</span>
+                <span>Sent over an encrypted connection and stored encrypted on our servers.</span>
                 <span className={narrative.length < 10 ? 'text-primary font-semibold' : 'text-body'}>
                   {narrative.length}/10 min characters
                 </span>
@@ -284,7 +305,7 @@ export function ReportForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block caption-strong text-ink mb-1.5 flex items-center gap-1.5">
+                  <label className="caption-strong text-ink mb-1.5 flex items-center gap-1.5">
                     <Calendar className="w-4 h-4 text-primary" /> Date of Incident
                   </label>
                   <input
@@ -297,7 +318,7 @@ export function ReportForm() {
                 </div>
 
                 <div>
-                  <label className="block caption-strong text-ink mb-1.5 flex items-center gap-1.5">
+                  <label className="caption-strong text-ink mb-1.5 flex items-center gap-1.5">
                     <MapPin className="w-4 h-4 text-primary" /> Region
                   </label>
                   <select
