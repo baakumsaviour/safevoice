@@ -19,7 +19,7 @@ export default function UsersPage() {
     formData.append('name', name)
     
     const res = await inviteCaseworkerAction(formData)
-    if (res.error) setMsg(res.error)
+    if ('error' in res) setMsg(res.error ?? 'Something went wrong')
     else {
       setMsg('Invitation sent successfully!')
       setEmail('')
