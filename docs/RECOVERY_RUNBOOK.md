@@ -54,12 +54,18 @@ the published password `password123`.
    `sb_secret_…` key (Project Settings → API Keys → Secret keys). The report,
    chat, storage, auth and admin server actions all construct the admin client,
    so the app cannot function without it.
-2. Create real staff accounts (Auth → Add user, strong unique passwords — never
-   the seed credentials), then insert matching rows:
-   ```sql
-   insert into public.users (id, email, full_name, role)
-   values ('<auth-user-uuid>', 'admin@yourdomain', 'Admin Name', 'admin');
+2. Create real staff accounts with `scripts/create-staff.mjs`, which creates the
+   auth user (email pre-confirmed), generates a strong password, and writes the
+   matching `public.users` row in one step:
+   ```bash
+   node scripts/create-staff.mjs admin@yourdomain "Admin Name" admin
+   node scripts/create-staff.mjs worker@yourdomain "Caseworker Name" caseworker
    ```
+   It prints the generated password once and never stores it. Re-running adopts
+   an existing auth user rather than resetting its password, so it is safe after
+   a partial failure. Staff cannot be created through the app: signup only ever
+   produces `victim`, and `trg_prevent_role_self_change` blocks self-promotion —
+   only service-role writes (where `auth.uid()` is NULL) are exempt.
 3. Seed `public.resources` with real Ghanaian helplines and support services —
    no migration or seed file populates it, so the resources page ships empty.
 4. Decide on email confirmations (Auth → keep them and accept the "check your
