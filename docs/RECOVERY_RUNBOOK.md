@@ -66,8 +66,12 @@ the published password `password123`.
    a partial failure. Staff cannot be created through the app: signup only ever
    produces `victim`, and `trg_prevent_role_self_change` blocks self-promotion —
    only service-role writes (where `auth.uid()` is NULL) are exempt.
-3. Seed `public.resources` with real Ghanaian helplines and support services —
-   no migration or seed file populates it, so the resources page ships empty.
+3. Decide what to do about `public.resources`. Nothing populates it and **no
+   application code reads it** — there is no resources page and no query
+   anywhere in `app/`, `server/` or `lib/`. It is currently dead schema, so it
+   is not a launch blocker. Either build the survivor-facing resources feature
+   (real Ghanaian helplines and support services, which need verifying against
+   an authoritative source before publication) or drop the table.
 4. Decide on email confirmations (Auth → keep them and accept the "check your
    inbox" signup flow, or disable them; the app supports both).
 5. Delete the throwaway anonymous users created while verifying the anonymous
