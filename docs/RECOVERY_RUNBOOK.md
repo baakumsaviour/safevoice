@@ -74,8 +74,34 @@ the published password `password123`.
    an authoritative source before publication) or drop the table.
 4. Decide on email confirmations (Auth → keep them and accept the "check your
    inbox" signup flow, or disable them; the app supports both).
-5. Delete the throwaway anonymous users created while verifying the anonymous
-   flow.
+5. Delete the 8 throwaway rows in **Authentication → Users** left by the
+   anonymous-flow and RLS verification. They are empty anonymous shells with no
+   `public.users` row and no cases attached — the application tables are clean
+   (`cases`, `case_messages`, `users` all at 0).
+
+### Verifying isolation
+
+`scripts/verify-rls.mjs` proves the property that matters most here: one
+survivor can never read, alter, or write into another survivor's case. It signs
+in two independent anonymous sessions and uses **only the publishable key**, so
+it tests exactly the trust level a real reporter's browser has.
+
+```bash
+node scripts/verify-rls.mjs
+```
+
+All 10 checks passed against this project on 2026-08-19: A cannot read, close,
+or message B's case; cannot read B's profile; cannot forge a caseworker or AI
+message; cannot self-promote to admin; cannot read the audit log — and, as a
+positive control, *can* still post a legitimate message in their own case.
+
+Re-run it after any change to the RLS policies. Two cautions learned while
+writing it: a denial only counts if it is a real `42501` row-level-security
+rejection, because a mistyped column name also returns 4xx and will happily
+masquerade as a passing security check; and the positive control is essential,
+since a project that denied everything would otherwise look perfectly secure
+while being completely broken. Set `SUPABASE_SERVICE_ROLE_KEY` before running it
+so it cleans up its own `RLSTEST` rows.
 
 The Supabase MCP server is wired into this repo at project scope in
 `.mcp.json`, pinned to `project_ref=wnfvzbybxhswucrwolyf`, so agent access
