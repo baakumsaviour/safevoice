@@ -1,10 +1,23 @@
 # SafeVoice Project Status
 
-## 🎯 Current Status (September 2026) — Full Landing Page & Floating Chat Live ✓
+## 🎯 Current Status (September 2026) — National DPI Blueprint & Full Landing Page Live ✓
 
-### What Was Done Recently (2026-09-05)
+### What Was Done Recently (2026-09-06)
 
-#### 1. **Complete Homepage Redesign & Full Landing Experience** ✓
+#### 1. **Council of Agents Deliberation & National DPI Blueprint PRD** ✓
+- Convened 5-specialist Council of Agents (Architect, Legal/DPI Researcher, Security & Forensics, Trauma UX Specialist, National Telecoms Specialist)
+- Conducted deep Ghana institutional research: Act 732, Act 560, Act 772, Act 843, Act 1038, and DOVVSU operational bottlenecks
+- Conducted post-mortem on previous initiatives (UNFPA/MoGCSP Boame App app-store penalty & SWIMS back-office silos)
+- Authored comprehensive National Blueprint in `/docs/NATIONAL_SAFEVOICE_BLUEPRINT_PRD.md` covering:
+  * Omnichannel Ingestion: Zero-data USSD (`*920*22#`), WhatsApp Business Voice Bot, Stealth Web PWA
+  * Digital Police Form 8 dispatch to eliminate medical evidence bottlenecks at public hospitals
+  * GhanaPostGPS 5m x 5m digital address auto-resolution for police squad cars
+  * SHA-256 client-side cryptographic hashing for court admissibility under Evidence Act 1975 & Act 772
+  * Multilingual trauma AI supporting Akan (Asante Twi, Fante), Ga, Ewe, Dagbani, Hausa, and Pidgin
+  * Bi-directional REST API integration with UNICEF/MoGCSP SWIMS (Primero)
+  * Sovereign hosting architecture for NITA National Data Centre migration
+
+#### 2. **Complete Homepage Redesign & Full Landing Experience** ✓
 - Transformed entry point from 50/50 split-screen to an authoritative, trauma-informed full landing page
 - Built `LandingNavbar`: Branding, Emergency hotline link, Case tracker trigger, login link, and Quick Escape button
 - Built `LandingHero`: Clear value proposition, "Submit Confidential Report" primary CTA, "Chat with AI Assistant" trigger, and trust guarantees
@@ -360,16 +373,24 @@ Staff accounts are provisioned through Supabase (see docs/RECOVERY_RUNBOOK.md). 
 
 ---
 
-## 📞 Support Hotlines (In App)
+## 📞 Support Hotlines (Ghana National)
 
 ```
-National Sexual Assault Hotline
-1-800-656-HOPE (4673)
-Available 24/7 | Confidential
+DOVVSU Headquarters (Police):
+055 1000 900 / 18555
+Available 24/7 | National Enforcement
 
-National Domestic Violence Hotline
-1-800-799-SAFE (7233)
-Available 24/7 | Multilingual
+National Emergency Dispatch:
+112 / 191
+Available 24/7 | Police & Ambulance
+
+Orange Support Centre (MoGCSP / UNFPA):
+0800 111 222 (Toll-Free)
+Available 24/7 | Psychosocial & Legal Aid
+
+Legal Aid Commission Ghana:
+0302 669 220
+Mon-Fri 8am-5pm | Free Legal Counsel
 ```
 
 ---
