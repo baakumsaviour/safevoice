@@ -1,9 +1,49 @@
 # SafeVoice Project Status
 
-## 🎯 Current Phase: 3 - Victim Reporting Flow (IN PROGRESS 🔄)
-### Phase 2: Authentication & Authorization (COMPLETE ✓)
+## 🎯 Current Status (September 2026) — Full Landing Page & Floating Chat Live ✓
 
-### What Was Done This Session
+### What Was Done Recently (2026-09-05)
+
+#### 1. **Complete Homepage Redesign & Full Landing Experience** ✓
+- Transformed entry point from 50/50 split-screen to an authoritative, trauma-informed full landing page
+- Built `LandingNavbar`: Branding, Emergency hotline link, Case tracker trigger, login link, and Quick Escape button
+- Built `LandingHero`: Clear value proposition, "Submit Confidential Report" primary CTA, "Chat with AI Assistant" trigger, and trust guarantees
+- Built `HelplineBar`: Ghana Emergency Helplines (DOVVSU, Police 112, Orange GBV Support, Legal Aid) with tap-to-call and quick copy
+- Built `HowItWorks`: 3-step privacy and reporting explanation
+- Built `VoiceShowcase`: Promotes audio-only crisis reporting without requiring written narrative
+- Built `LandingFooter`: Emergency safety notices, Esc x2 exit reminder, and quick navigation
+
+#### 2. **Expandable Floating AI Chat Widget** ✓
+- Implemented `FloatingChatWidget` anchored on the bottom-right
+- Minimized state: Friendly floating badge ("Need to talk? SafeVoice AI is here 24/7") with pulsing online indicator
+- Expanded state: Clean popup modal with AI conversation thread, live animated typing indicator ("Assistant is typing..."), and emergency exit button
+- Powered by OpenRouter (`openrouter/free` meta-router + automatic multi-model failover)
+
+#### 3. **Anonymous Case Status Tracker** ✓
+- Implemented `lookupAnonymousCaseAction` in `server/actions/victim.ts`
+- Built `CaseTrackerModal`: Allows victims to enter their 12-character Reference Code (e.g. `SV-U5S6-PPBA`) and get immediate progress updates without requiring an account or password
+
+#### 4. **Audio-Only Incident Reporting Unblocked** ✓
+- Users recording an audio note via WebMedia VoiceRecorder are no longer required to type a narrative description
+- UI reflects optional narrative when voice note is attached
+- Server action `submitReportAction` accepts `has_audio` flag and safely defaults narrative to `[Audio-only report — please review the attached voice recording]`
+
+#### 2. **AI First-Responder via OpenRouter** ✓
+- Replaced slow/unfunded gateway with OpenRouter provider (`@openrouter/ai-sdk-provider`)
+- Integrated free high-performance model: `google/gemma-3-1b-it:free`
+- Added 15-second `Promise.race` timeout protection so AI queries never hang indefinitely
+
+#### 3. **Live Interactive Mapbox Map** ✓
+- Integrated live interactive map at `/admin/analytics` (`app/(dashboard)/admin/analytics/page.tsx`)
+- Created `server/actions/analytics.ts` with geocoded coordinates for Ghana's 16 regions with jitter
+- Created `IncidentMap.tsx` with color-coded markers by category, interactive click popups, and category legend
+
+#### 4. **Mobile Responsiveness & Button Collision Fixes** ✓
+- Relocated `QuickEscape` ("Leave Site") on mobile (`< sm`) to `bottom-6 left-4 px-4 py-2.5 text-sm`
+- Reconfigured multi-step report form buttons to `flex-col-reverse sm:flex-row items-stretch` on mobile with `pb-16 sm:pb-6`
+- Added bottom padding `pb-20 sm:pb-4` to sticky chat input bars on landing page and victim chat page
+
+### Previous Milestone Highlights
 
 #### 1. **Landing Page Complete Redesign** ✓
 - Simplified from technical Vodafone showcase to user-focused, trauma-informed design
