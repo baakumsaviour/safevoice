@@ -11,8 +11,9 @@ import { INCIDENT_TYPE_VALUES } from '@/constants/incident-types'
 const reportSchema = z.object({
   narrative: z
     .string()
-    .min(10, 'Please provide more details about the incident.')
-    .max(10000, 'Please keep your description under 10,000 characters.'),
+    .max(10000, 'Please keep your description under 10,000 characters.')
+    .default(''),
+  has_audio: z.boolean().default(false),
   incident_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date.')
@@ -27,7 +28,10 @@ const reportSchema = z.object({
     errorMap: () => ({ message: 'Consent is required to submit a report.' }),
   }),
   case_type: z.enum(INCIDENT_TYPE_VALUES).default('general_abuse'),
-})
+}).refine(
+  (data) => data.has_audio || data.narrative.trim().length >= 10,
+  { message: 'Please provide at least 10 characters describing the incident, or record an audio note.', path: ['narrative'] }
+)
 
 const URGENT_KEYWORDS = ['weapon', 'gun', 'knife', 'kill', 'killing', 'immediate', 'danger', 'bleeding', 'emergency', 'right now', 'suicide']
 const HIGH_KEYWORDS = ['child', 'minor', 'daily', 'threat', 'threats', 'stalk', 'stalking', 'beat', 'beating', 'hit', 'hurt']
@@ -101,6 +105,7 @@ export async function submitReportAction(formData: FormData): Promise<SubmitRepo
     const parsed = reportSchema.safeParse({
       ...rawData,
       consent_given: rawData.consent_given === 'on' || rawData.consent_given === 'true',
+      has_audio: rawData.has_audio === 'true',
       case_type: rawData.case_type || 'general_abuse',
     })
 
@@ -117,8 +122,9 @@ export async function submitReportAction(formData: FormData): Promise<SubmitRepo
     if ('error' in reporter) return { error: reporter.error }
     const victimId = reporter.id
 
-    const encryptedNarrative = encrypt(data.narrative)
-    const priority = calculatePriority(data.case_type, data.narrative)
+    const narrativeText = data.narrative.trim() || '[Audio-only report — please review the attached voice recording]'
+    const encryptedNarrative = encrypt(narrativeText)
+    const priority = calculatePriority(data.case_type, narrativeText)
     const locationParts = [data.incident_region, data.incident_district, data.incident_location].filter(Boolean)
     const fullLocation = locationParts.length > 0 ? locationParts.join(', ') : null
 

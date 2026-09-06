@@ -41,7 +41,9 @@ export function QuickEscape() {
   return (
     <button
       onClick={handleEscape}
-      className="fixed bottom-6 right-6 z-[100] bg-red-600 hover:bg-red-700 text-white shadow-xl rounded-full px-6 py-4 flex items-center gap-2 transition-all font-semibold"
+      className="fixed z-[100] bg-red-600 hover:bg-red-700 text-white shadow-xl rounded-full transition-all font-semibold
+        bottom-6 left-4 px-4 py-2.5 text-sm
+        sm:bottom-6 sm:right-6 sm:left-auto sm:px-6 sm:py-4 sm:text-base"
       title="Quick Escape (press Esc twice)"
     >
       <span>Leave Site</span>

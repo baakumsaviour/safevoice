@@ -72,8 +72,8 @@ export function ReportForm() {
 
   const handleNext = () => {
     setError(null)
-    if (step === 2 && narrative.trim().length < 10) {
-      setError('Please provide at least 10 characters describing the incident so caseworkers can help.')
+    if (step === 2 && !audioBlob && narrative.trim().length < 10) {
+      setError('Please provide at least 10 characters describing the incident, or record an audio note instead.')
       return
     }
     if (step < 4) {
@@ -95,8 +95,8 @@ export function ReportForm() {
     setIsSubmitting(true)
     setError(null)
 
-    if (narrative.trim().length < 10) {
-      setError('Please provide more details about what happened.')
+    if (!audioBlob && narrative.trim().length < 10) {
+      setError('Please provide more details about what happened, or record an audio note.')
       setIsSubmitting(false)
       setStep(2)
       return
@@ -111,6 +111,7 @@ export function ReportForm() {
     if (incidentLocation) formData.append('incident_location', incidentLocation)
     if (contactInfo) formData.append('contact_info', contactInfo)
     formData.append('consent_given', consentGiven ? 'true' : 'false')
+    formData.append('has_audio', audioBlob ? 'true' : 'false')
 
     if (selectedFile) {
       formData.append('evidence_file', selectedFile)
@@ -281,21 +282,24 @@ export function ReportForm() {
 
             <div>
               <label className="block body-sm-strong text-ink mb-2">
-                Narrative Description <span className="text-primary">*</span>
+                Narrative Description {!audioBlob && <span className="text-primary">*</span>}
+                {audioBlob && <span className="text-body font-normal text-sm"> (optional — audio note recorded)</span>}
               </label>
               <textarea
                 value={narrative}
                 onChange={(e) => setNarrative(e.target.value)}
-                required
+                required={!audioBlob}
                 rows={6}
                 className="w-full bg-canvas border border-border rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none text-ink body-sm leading-relaxed"
-                placeholder="I want to report an incident involving... (minimum 10 characters)"
+                placeholder={audioBlob ? "You've recorded an audio note. You may optionally add written details here." : "I want to report an incident involving... (minimum 10 characters)"}
               />
               <div className="flex justify-between items-center mt-1.5 caption text-body">
                 <span>Sent over an encrypted connection and stored encrypted on our servers.</span>
-                <span className={narrative.length < 10 ? 'text-primary font-semibold' : 'text-body'}>
-                  {narrative.length}/10 min characters
-                </span>
+                {!audioBlob && (
+                  <span className={narrative.length < 10 ? 'text-primary font-semibold' : 'text-body'}>
+                    {narrative.length}/10 min characters
+                  </span>
+                )}
               </div>
             </div>
 
@@ -358,11 +362,11 @@ export function ReportForm() {
               </div>
             </div>
 
-            <div className="pt-6 border-t border-border flex items-center justify-between">
+            <div className="pt-6 pb-16 sm:pb-6 border-t border-border flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={handleBack}
-                className="border border-border bg-canvas text-ink py-3 px-6 rounded-full hover:bg-canvas-soft transition-colors flex items-center gap-2 font-medium cursor-pointer"
+                className="border border-border bg-canvas text-ink py-3 px-6 rounded-full hover:bg-canvas-soft transition-colors flex items-center justify-center gap-2 font-medium cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back</span>
@@ -370,7 +374,7 @@ export function ReportForm() {
               <button
                 type="button"
                 onClick={handleNext}
-                className="bg-primary text-on-primary py-3.5 px-8 rounded-full hover:opacity-90 transition-opacity flex items-center gap-2 font-medium cursor-pointer"
+                className="bg-primary text-on-primary py-3.5 px-8 rounded-full hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-medium cursor-pointer"
               >
                 <span>Next: Attach Evidence</span>
                 <ArrowRight className="w-4 h-4" />
@@ -389,11 +393,11 @@ export function ReportForm() {
               onRemoveRecordedAudio={() => setAudioBlob(null)}
             />
 
-            <div className="pt-6 border-t border-border flex items-center justify-between">
+            <div className="pt-6 pb-16 sm:pb-6 border-t border-border flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={handleBack}
-                className="border border-border bg-canvas text-ink py-3 px-6 rounded-full hover:bg-canvas-soft transition-colors flex items-center gap-2 font-medium cursor-pointer"
+                className="border border-border bg-canvas text-ink py-3 px-6 rounded-full hover:bg-canvas-soft transition-colors flex items-center justify-center gap-2 font-medium cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back</span>
@@ -401,7 +405,7 @@ export function ReportForm() {
               <button
                 type="button"
                 onClick={handleNext}
-                className="bg-primary text-on-primary py-3.5 px-8 rounded-full hover:opacity-90 transition-opacity flex items-center gap-2 font-medium cursor-pointer"
+                className="bg-primary text-on-primary py-3.5 px-8 rounded-full hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-medium cursor-pointer"
               >
                 <span>Next: Review & Submit</span>
                 <ArrowRight className="w-4 h-4" />
@@ -511,12 +515,12 @@ export function ReportForm() {
               </label>
             </div>
 
-            <div className="pt-6 border-t border-border flex items-center justify-between">
+            <div className="pt-6 pb-16 sm:pb-6 border-t border-border flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={handleBack}
                 disabled={isSubmitting}
-                className="border border-border bg-canvas text-ink py-3 px-6 rounded-full hover:bg-canvas-soft transition-colors flex items-center gap-2 font-medium disabled:opacity-50 cursor-pointer"
+                className="border border-border bg-canvas text-ink py-3 px-6 rounded-full hover:bg-canvas-soft transition-colors flex items-center justify-center gap-2 font-medium disabled:opacity-50 cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back</span>
@@ -524,7 +528,7 @@ export function ReportForm() {
               <button
                 type="submit"
                 disabled={isSubmitting || !consentGiven}
-                className="bg-primary text-on-primary py-4 px-10 rounded-full hover:opacity-90 transition-all shadow-lg flex items-center gap-2 font-semibold disabled:opacity-50 cursor-pointer"
+                className="bg-primary text-on-primary py-4 px-10 rounded-full hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2 font-semibold disabled:opacity-50 cursor-pointer"
               >
                 <Lock className="w-4 h-4" />
                 <span>{isSubmitting ? 'Encrypting & Submitting...' : 'Submit Secure Report'}</span>
