@@ -30,6 +30,7 @@ export default function VictimChatPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [isAiTyping, setIsAiTyping] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
@@ -38,7 +39,7 @@ export default function VictimChatPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, isAiTyping])
 
   useEffect(() => {
     let cancelled = false
@@ -66,24 +67,28 @@ export default function VictimChatPage() {
     }
   }, [messages])
 
+  const refreshThread = async (id: string) => {
+    const result = await getCaseMessagesAction(id, lastSeenRef.current ?? undefined)
+    if ('success' in result && result.messages.length > 0) {
+      const fresh = result.messages.map(toUiMessage)
+      if (fresh.some((m) => m.role === 'ai' || m.role === 'caseworker')) {
+        setIsAiTyping(false)
+      }
+      setMessages((prev) => {
+        const known = new Set(prev.map((m) => m.id))
+        return [...prev, ...fresh.filter((m) => !known.has(m.id))]
+      })
+    }
+  }
+
   useEffect(() => {
     if (!caseId) return
-    const refresh = async () => {
-      const result = await getCaseMessagesAction(caseId, lastSeenRef.current ?? undefined)
-      if ('success' in result && result.messages.length > 0) {
-        const fresh = result.messages.map(toUiMessage)
-        setMessages((prev) => {
-          const known = new Set(prev.map((m) => m.id))
-          return [...prev, ...fresh.filter((m) => !known.has(m.id))]
-        })
-      }
-    }
     const channel = supabase
       .channel(`case_${caseId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'case_messages', filter: `case_id=eq.${caseId}` },
-        refresh
+        () => refreshThread(caseId)
       )
       .subscribe()
     return () => {
@@ -91,18 +96,36 @@ export default function VictimChatPage() {
     }
   }, [caseId, supabase])
 
+  // Polling fallback while waiting for AI reply
+  useEffect(() => {
+    if (!isAiTyping || !caseId) return
+    const startTime = Date.now()
+    const interval = setInterval(async () => {
+      await refreshThread(caseId)
+      if (Date.now() - startTime > 15000) {
+        setIsAiTyping(false)
+        clearInterval(interval)
+      }
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [isAiTyping, caseId])
+
   const handleSend = async () => {
     if (!input.trim() || isSending || !caseId) return
     const text = input.trim()
     setInput('')
     setIsSending(true)
+    setIsAiTyping(true)
     try {
       const result = await sendChatMessageAction(caseId, text)
       if ('error' in result) {
         setInput(text)
+        setIsAiTyping(false)
       } else {
         setMessages((prev) => (prev.some((m) => m.id === result.message.id) ? prev : [...prev, toUiMessage(result.message)]))
       }
+    } catch {
+      setIsAiTyping(false)
     } finally {
       setIsSending(false)
     }
@@ -165,12 +188,26 @@ export default function VictimChatPage() {
                 </div>
               </div>
             )
-          })
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+          }))}
 
-      <div className="p-4 bg-canvas border-t border-border sticky bottom-0">
+          {/* AI Typing Indicator */}
+          {isAiTyping && (
+            <div className="flex flex-col gap-1 max-w-[85%] items-start animate-fadeIn">
+              <span className="caption text-body flex items-center gap-1.5 px-1">
+                <Bot className="w-3 h-3 text-primary" /> SafeVoice Assistant is responding...
+              </span>
+              <div className="px-4 py-3 rounded-2xl rounded-tl-sm body-sm shadow-sm bg-primary/10 border border-primary/20 text-ink flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-2 h-2 rounded-full bg-primary animate-bounce" />
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+      <div className="p-4 pb-20 sm:pb-4 bg-canvas border-t border-border sticky bottom-0">
         <div className="flex gap-2">
           <input
             type="text"

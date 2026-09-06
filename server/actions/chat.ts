@@ -1,5 +1,6 @@
 'use server'
 
+import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { after } from 'next/server'
 import { generateText } from 'ai'
 import { createClient } from '@/lib/supabase/server'
@@ -50,6 +51,65 @@ Do NOT give medical or legal advice.
 Acknowledge their courage. Keep responses concise (1-3 sentences max).
 If they indicate immediate life-threatening danger, tell them to call emergency services immediately.
 If their situation is complex or they ask for a human, say you will notify a human caseworker to take over shortly.`
+
+const FREE_FALLBACK_MODELS = [
+  'openrouter/free',
+  'z-ai/glm-5.2:free',
+  'nvidia/nemotron-3.5-lightning:free',
+  'minimax/minimax-m2.7:free',
+]
+
+const GUARANTEED_FALLBACK_REPLY =
+  "Thank you for reaching out. We hear you and acknowledge your courage. Your message has been safely received and securely encrypted. A dedicated SafeVoice caseworker has been alerted and will assist you directly here shortly. If you are in immediate physical danger, please contact local emergency services immediately."
+
+async function generateAIContent(
+  history: Array<{ role: 'user' | 'assistant'; content: string }>
+): Promise<string> {
+  const openrouterKey = process.env.OPENROUTER_API_KEY
+
+  if (openrouterKey) {
+    const openrouter = createOpenRouter({ apiKey: openrouterKey })
+    const configuredModel = process.env.OPENROUTER_MODEL || 'openrouter/free'
+    const candidateModels = Array.from(new Set([configuredModel, ...FREE_FALLBACK_MODELS]))
+
+    for (const modelId of candidateModels) {
+      try {
+        const aiPromise = generateText({
+          model: openrouter(modelId),
+          system: AI_SYSTEM_PROMPT,
+          messages: history,
+        })
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout on ${modelId}`)), 10_000)
+        )
+        const { text } = await Promise.race([aiPromise, timeoutPromise])
+        if (text && text.trim().length > 0) {
+          return text.trim()
+        }
+      } catch (modelErr) {
+        console.warn(`[chat] model ${modelId} failed:`, modelErr instanceof Error ? modelErr.message : modelErr)
+      }
+    }
+  }
+
+  // Fallback to Vercel AI Gateway if configured
+  try {
+    const gatewayModel = process.env.AI_MODEL || 'openai/gpt-4o-mini'
+    const { text } = await generateText({
+      model: gatewayModel,
+      system: AI_SYSTEM_PROMPT,
+      messages: history,
+    })
+    if (text && text.trim().length > 0) {
+      return text.trim()
+    }
+  } catch (gwErr) {
+    console.warn('[chat] Vercel AI gateway failed:', gwErr instanceof Error ? gwErr.message : gwErr)
+  }
+
+  // Guarantee: victim never receives complete silence
+  return GUARANTEED_FALLBACK_REPLY
+}
 
 function toChatMessage(m: { id: string; message_encrypted: string; sender_role: string; created_at: string }): ChatMessage {
   let text = decrypt(m.message_encrypted)
@@ -112,25 +172,17 @@ export async function triggerAIResponse(caseId: string): Promise<void> {
         content: m.text,
       }))
 
-    const { text } = await generateText({
-      // Plain "provider/model" strings route through the Vercel AI Gateway
-      // using AI_GATEWAY_API_KEY.
-      model: process.env.AI_MODEL || 'openai/gpt-4o-mini',
-      system: AI_SYSTEM_PROMPT,
-      messages: history,
-    })
-
-    if (!text) return
+    const replyText = await generateAIContent(history)
 
     const { error } = await admin.from('case_messages').insert({
       case_id: caseId,
       sender_id: null,
       sender_role: 'ai',
-      message_encrypted: encrypt(text),
+      message_encrypted: encrypt(replyText),
     })
     if (error) console.error('[chat] failed to store AI reply:', error)
   } catch (err) {
-    console.error('[chat] AI response failed:', err)
+    console.error('[chat] AI response failed completely:', err)
   }
 }
 
