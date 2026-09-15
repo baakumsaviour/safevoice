@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { submitReportAction } from '@/server/actions/report'
+import { registerDraftHandlers } from '@/lib/client/draftVault'
+import { StealthButton } from '@/components/stealth/StealthButton'
 import { ReportStepper, StepItem } from './ReportStepper'
 import { IncidentTypeSelector, INCIDENT_TYPES } from './IncidentTypeSelector'
 import { EvidenceUploader } from './EvidenceUploader'
@@ -54,6 +56,45 @@ export function ReportForm() {
   // Files State
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+
+  // Ephemeral Draft Vault Registration for Stealth Mode
+  useEffect(() => {
+    const unregister = registerDraftHandlers(
+      () => ({
+        step,
+        caseType,
+        narrative,
+        incidentDate,
+        incidentRegion,
+        incidentDistrict,
+        incidentLocation,
+        contactInfo,
+        consentGiven,
+      }),
+      (draft) => {
+        if (draft.step) setStep(draft.step)
+        if (draft.caseType) setCaseType(draft.caseType)
+        if (draft.narrative) setNarrative(draft.narrative)
+        if (draft.incidentDate) setIncidentDate(draft.incidentDate)
+        if (draft.incidentRegion) setIncidentRegion(draft.incidentRegion)
+        if (draft.incidentDistrict) setIncidentDistrict(draft.incidentDistrict)
+        if (draft.incidentLocation) setIncidentLocation(draft.incidentLocation)
+        if (draft.contactInfo) setContactInfo(draft.contactInfo)
+        if (typeof draft.consentGiven === 'boolean') setConsentGiven(draft.consentGiven)
+      }
+    )
+    return unregister
+  }, [
+    step,
+    caseType,
+    narrative,
+    incidentDate,
+    incidentRegion,
+    incidentDistrict,
+    incidentLocation,
+    contactInfo,
+    consentGiven,
+  ])
 
   const maxDate = new Date().toISOString().split('T')[0]
 
@@ -219,6 +260,14 @@ export function ReportForm() {
 
   return (
     <div className="bg-canvas-soft rounded-3xl p-6 md:p-10 border border-border shadow-sm">
+      <div className="flex items-center justify-between pb-4 mb-6 border-b border-border/60">
+        <div className="flex items-center gap-2 text-xs text-body font-medium">
+          <ShieldCheck className="w-4 h-4 text-primary" />
+          <span>Encrypted Confidential Report</span>
+        </div>
+        <StealthButton variant="pill" label="Quick Disguise" />
+      </div>
+
       <ReportStepper currentStep={step} steps={STEPS} onStepClick={(s) => s < step && setStep(s)} />
 
       {error && (
