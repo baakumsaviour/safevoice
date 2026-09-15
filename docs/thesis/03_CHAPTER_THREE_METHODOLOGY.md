@@ -126,6 +126,9 @@ SafeVoice is organized into a modular four-tier architecture: **Client Layer (PW
 └────────────────────────────────────────────┘  └─────────────────────────────┘
 ```
 
+![Figure 3.1: SafeVoice High-Level Tiered System Architecture](figures/fig3_1_system_architecture.png)
+*Figure 3.1: SafeVoice High-Level Tiered System Architecture*
+
 ---
 
 ## 3.3 Ephemeral In-Memory Draft Vault Engineering
@@ -157,6 +160,9 @@ To ensure **Zero-DOM-Leakage**, SafeVoice operates an ephemeral in-memory vault 
        │
        └───► Timer expires OR '0000 =' entered ──► [PURGED] (Memory zeroed)
 ```
+
+![Figure 3.2: Web Crypto AES-256-GCM Ephemeral In-Memory Draft Vault Workflow](figures/fig3_2_ephemeral_vault.png)
+*Figure 3.2: Web Crypto AES-256-GCM Ephemeral In-Memory Draft Vault Workflow*
 
 ### Mathematical Formulation
 Let $D$ represent the serialized JSON string of the active report draft, comprising incident category, narrative, selected region, district, and contact details:
@@ -213,6 +219,9 @@ The disguise engine is modeled as a finite-state machine with four primary state
                                         └───────────────┘
 ```
 
+![Figure 3.3: State Transition Diagram of Stealth Camouflage Engine](figures/fig3_3_stealth_state_machine.png)
+*Figure 3.3: State Transition Diagram of Stealth Camouflage Engine*
+
 ### Arithmetic Engine & Secret Evaluation Loop
 The disguise cannot rely on a static visual mockup; if an assailant tests the screen by tapping numbers and operators, the application must compute accurate arithmetic. 
 
@@ -248,6 +257,11 @@ const handleEquals = useCallback(() => {
 }, [displayValue, operation, prevValue, unlockPin, onUnlock, onPanicWipe])
 ```
 
+Figure 3.4 depicts the physical visual keypad configuration, button dispatch bindings, and secret PIN evaluation pathway.
+
+![Figure 3.4: Authentic Arithmetic Calculator Disguise Keypad and Event Handler](figures/fig3_4_calculator_keypad.png)
+*Figure 3.4: Authentic Arithmetic Calculator Disguise Keypad and Event Handler*
+
 ### Tab Metadata Spoofing
 Upon transition into `CAMOUFLAGE_ACTIVE`, the state machine manipulates three elements of browser tab metadata:
 1. `document.title = 'QuickCalc - Calculator'`
@@ -264,6 +278,11 @@ SafeVoice implements a dual-layer security model comprising application-level Se
 The system supports two entry pathways:
 - **Authenticated Staff & Caseworkers:** Registered personnel log in through standard credentials. Their role is committed to `public.users.role` as either `caseworker` or `admin`.
 - **Anonymous Survivors:** Anonymous reporters are provisioned with an authentic Supabase anonymous authentication session (`supabase.auth.signInAnonymously()`). This creates a genuine UUID in `auth.users`, enabling PostgREST to evaluate `auth.uid()` in Row-Level Security policies and subscribe to real-time websocket channels without exposing personal identity.
+
+Figure 3.5 diagrams the anonymous authentication session lifecycle and database RLS policy boundary.
+
+![Figure 3.5: Supabase Anonymous Authentication and PostgREST RLS Security Boundary](figures/fig3_5_rls_security_boundary.png)
+*Figure 3.5: Supabase Anonymous Authentication and PostgREST RLS Security Boundary*
 
 ### Role-Based Authorization Gates
 Every server action in `server/actions/` invokes strict validation from `server/auth.ts` on its first line of execution:
@@ -332,11 +351,16 @@ Once triaged, SafeVoice orchestrates twin operational tracks:
 - **Track A (Criminal Justice & DOVVSU Police):** Dispatches geolocated alert packets including GhanaPostGPS digital addresses to the nearest police squad vehicle. Enables station sergeants to issue cryptographic QR-coded Digital Police Form 8 medical examination vouchers.
 - **Track B (Social Care & Clinical Protection):** Notifies Department of Social Welfare caseworkers and partner medical centers (Korle-Bu, KATH, Ridge, Tamale), facilitating trauma counseling and shelter coordination.
 
+Figure 3.6 illustrates the dual-track case routing architecture dividing enforcement alerts from social welfare interventions.
+
+![Figure 3.6: Dual-Track Case Routing: Criminal Enforcement vs Social Welfare](figures/fig3_6_dual_track_routing.png)
+*Figure 3.6: Dual-Track Case Routing: Criminal Enforcement vs Social Welfare*
+
 ---
 
 ## 3.7 Evaluation and Verification Framework
 
-The empirical evaluation of SafeVoice is conducted using three specialized verification frameworkes:
+The empirical evaluation of SafeVoice is conducted using three specialized verification suites:
 
 1. **Security Isolation Verification Suite ([`scripts/verify-rls.mjs`](file:///Users/user/development/safevoice/scripts/verify-rls.mjs)):** An automated script that provisions two independent anonymous reporters (User A and User B) against the live cloud database (`wnfvzbybxhswucrwolyf.supabase.co`). The test suite executes 10 adversarial checks attempting cross-tenant case reading, unauthorized status closing, message spoofing, caseworker impersonation, and administrative self-promotion.
 2. **Stealth and Cryptographic Profiler ([`scripts/verify-stealth.mjs`](file:///Users/user/development/safevoice/scripts/verify-stealth.mjs)):** A benchmarking tool that validates Web Crypto AES-256-GCM encryption/decryption round-trips, measures draft serialization time, verifies memory zeroing upon expiry, and tests arithmetic precision and secret PIN detection.

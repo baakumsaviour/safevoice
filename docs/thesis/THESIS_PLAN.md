@@ -18,8 +18,10 @@ This thesis fulfills the final-year research and documentation requirements for 
 * **College:** College of Basic and Applied Sciences (CBAS)
 * **Department:** Department of Computer Science
 * **Student Name:** Saviour Baakum
+* **Student ID:** 11357296
+* **Degree Program:** Bachelor of Science in Information Technology (BSc IT)
 * **Supervisor:** Dr. Kofi Sarpong
-* **Submission Date:** Academic Year 2025/2026
+* **Submission Date:** September, 2026
 
 ### Thesis Title
 > **SafeVoice: A Trauma-Informed, Cryptographically Verified Digital Public Infrastructure for Crisis Reporting and Case Management in Ghana**

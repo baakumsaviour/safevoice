@@ -48,6 +48,10 @@ The implementation of the SafeVoice platform was executed using a modern, type-s
 4. **PWA Offline Shell:** Configured via `@ducanh2912/next-pwa` with `turbopack: {}` configuration, caching static JavaScript bundles, stylesheets, and calculator assets so that disguise and emergency phone directories operate 100% offline.
 5. **Geospatial Visualization:** Integrated Mapbox GL (`mapbox-gl` v3.24) at `/admin/analytics` displaying live geocoded markers across Ghana's 16 administrative regions with deliberate 1.5 km random coordinate jitter to protect victim privacy.
 
+### Repository Availability and Open Source Artifacts
+The entire implementation, cryptographic test scripts, RLS isolation suites, and deployment assets are available in the public source repository:
+https://github.com/baakumsaviour/safevoice
+
 ---
 
 ## 4.2 Security and Multi-Tenant Isolation Results
@@ -79,6 +83,8 @@ Isolation checks (A acting against B's data):
 Cleaned up test rows.
 10 passed, 0 failed
 ```
+
+![Figure 4.1: Automated RLS Security Isolation Test Execution Output](figures/fig4_1_rls_test_output.png)
 *Figure 4.1: Automated RLS Security Isolation Test Execution Output*
 
 Table 4.1 details the adversarial vectors tested, the expected security boundary, and the observed result.
@@ -124,6 +130,9 @@ Table 4.2 documents the measured latencies across 100 test iterations per device
 
 The measured latencies fall well below the human visual perception threshold (approximately 16 milliseconds, or one frame at 60 Hz). When the disguise is triggered, the interface switches instantly, with zero visual stutter or partial layout reflow.
 
+![Figure 4.2: Stealth Mode Transition Latency across Test Devices (ms)](figures/fig4_2_latency_benchmark.png)
+*Figure 4.2: Stealth Mode Transition Latency across Test Devices (ms)*
+
 ### Ephemeral Draft Vault Lifecycle & Memory Profiling
 To verify the **Zero-DOM-Leakage** guarantee, memory heap snapshots were taken before camouflage activation, during camouflage active state, and after unmasking.
 
@@ -152,6 +161,10 @@ To evaluate compliance with Section 7 and Section 8 of the Electronic Transactio
 2. **Tamper Detection Proof:** A simulated Man-in-the-Middle (MitM) modification was executed by appending a single byte (`0x00`) to an uploaded voice file on the server. When the case dossier was generated, the verification engine detected the hash mismatch:
    $$\text{Calculated Hash} \neq \text{Intake Hash Committed in Audit Log}$$
    The system flagged the evidence as "Compromised / Altered", proving that evidence spoliation is mathematically detectable.
+3. **Geospatial Incident Triage Verification:** Incident dispatch and regional distribution were verified via the administrative analytics console (`/admin/analytics`). Figure 4.3 illustrates the Mapbox GL interactive incident clustering across Ghana's 16 administrative regions, incorporating 1.5 km random privacy jittering to protect victim confidentiality.
+
+![Figure 4.3: Interactive Incident Mapbox Visualization for Ghana's 16 Administrative Regions](figures/fig4_3_mapbox_ghana_map.png)
+*Figure 4.3: Interactive Incident Mapbox Visualization for Ghana's 16 Administrative Regions*
 
 ---
 

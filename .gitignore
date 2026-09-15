@@ -24,3 +24,7 @@ dev.pid
 # Supabase local
 supabase/.temp/
 supabase/.branches/
+
+# Office temporary files
+~$*
+*.tmp

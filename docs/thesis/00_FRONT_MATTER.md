@@ -10,11 +10,11 @@
 **BY**
 
 **SAVIOUR BAAKUM**  
-(10984321)
+(11357296)
 
 <br><br>
 
-A THESIS SUBMITTED TO THE DEPARTMENT OF COMPUTER SCIENCE, SCHOOL OF GRADUATE STUDIES, UNIVERSITY OF GHANA, IN PARTIAL FULFILLMENT OF THE REQUIREMENTS FOR THE AWARD OF THE DEGREE OF MASTER OF SCIENCE IN COMPUTER SCIENCE
+A PROJECT REPORT SUBMITTED TO THE DEPARTMENT OF COMPUTER SCIENCE, COLLEGE OF BASIC AND APPLIED SCIENCES, UNIVERSITY OF GHANA, IN PARTIAL FULFILLMENT OF THE REQUIREMENTS FOR THE AWARD OF THE DEGREE OF BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY
 
 <br><br>
 
@@ -27,7 +27,7 @@ A THESIS SUBMITTED TO THE DEPARTMENT OF COMPUTER SCIENCE, SCHOOL OF GRADUATE STU
 
 ## DECLARATION
 
-I, **SAVIOUR BAAKUM**, hereby declare that this thesis entitled *"SafeVoice: A Trauma-Informed, Cryptographically Verified Digital Public Infrastructure for Crisis Reporting and Case Management in Ghana"* is the result of my own independent research carried out under the supervision of **DR. KOFI SARPONG** in the Department of Computer Science, University of Ghana. 
+I, **SAVIOUR BAAKUM** (Student ID: **11357296**), hereby declare that this project report entitled *"SafeVoice: A Trauma-Informed, Cryptographically Verified Digital Public Infrastructure for Crisis Reporting and Case Management in Ghana"* is the result of my own independent research carried out under the supervision of **DR. KOFI SARPONG** in the Department of Computer Science, College of Basic and Applied Sciences, University of Ghana. 
 
 This work has not been presented either in whole or in part for the award of any other degree in this university or elsewhere. All citations and secondary materials consulted have been fully acknowledged.
 
@@ -71,7 +71,7 @@ This thesis is dedicated to:
 
 To every survivor of abuse and violence across Ghana whose voice was silenced by fear, lack of safe reporting channels, or systemic indifference. May technology serve as your shield and your bridge to justice.
 
-To my family, for their unending patience, prayers, and sacrifices throughout my graduate education at the University of Ghana.
+To my family, for their unending patience, prayers, and sacrifices throughout my undergraduate education at the University of Ghana.
 
 \newpage
 
@@ -85,7 +85,7 @@ I extend sincere thanks to the faculty and administrative staff of the Departmen
 
 I acknowledge the officers and caseworkers of the Domestic Violence and Victim Support Unit (DOVVSU) of the Ghana Police Service, the Department of Social Welfare, and civil society legal practitioners who shared operational insights regarding the procedural hurdles of Police Form 8 dispatch, evidence spoliation, and victim protection in Ghanaian courts.
 
-Finally, I thank my colleagues, fellow graduate students, and friends for their camaraderie, peer review, and moral support during late-night programming and testing sessions.
+Finally, I thank my colleagues, fellow students, and friends for their camaraderie, peer review, and moral support during late-night programming and testing sessions.
 
 \newpage
 

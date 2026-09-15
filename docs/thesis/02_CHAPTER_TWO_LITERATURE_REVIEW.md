@@ -46,6 +46,11 @@ The existing paper-based workflow operates as follows:
 
 This bureaucratic round-trip introduces severe delays that routinely exceed the critical 72-hour forensic window during which DNA biological evidence remains viable on epithelial surfaces. Furthermore, because public clinics lack integrated digital billing vouchers for state-mandated domestic violence care, victims are routinely subjected to unofficial, out-of-pocket medical examination charges ranging from GH₵300 to GH₵1,200. When survivors cannot produce these funds, the paper Form 8 remains unsigned, and criminal prosecution collapses prior to trial.
 
+Figure 2.1 contrasts this sequential paper-based bottleneck against the parallelized, cryptographically authenticated case routing enabled by SafeVoice.
+
+![Figure 2.1: Institutional Case Flow Comparison: Paper-Based DOVVSU vs SafeVoice](figures/fig2_1_institutional_case_flow.png)
+*Figure 2.1: Institutional Case Flow Comparison: Paper-Based DOVVSU vs SafeVoice*
+
 Table 2.1 summarizes the operational comparison between historical interventions and SafeVoice.
 
 ### Table 2.1: Comparative Autopsy of Previous Ghanaian Crisis Platforms

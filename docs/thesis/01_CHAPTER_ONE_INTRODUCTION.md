@@ -5,6 +5,9 @@
 
 Gender-based violence (GBV), domestic abuse, and violence against children represent significant social, legal, and public health problems in Ghana. The Domestic Violence and Victim Support Unit (DOVVSU) of the Ghana Police Service consistently records between 15,000 and 18,000 formal complaints annually across the country (Ghana Police Service, 2024). These reported figures represent only a fraction of actual occurrences. Sociological research and field surveys conducted by the Ministry of Gender, Children and Social Protection (MoGCSP) suggest that over 70% of abuse incidents in Ghanaian domestic environments go unrecorded (MoGCSP, 2021). The primary factors driving this non-reporting include deep-seated fear of economic abandonment, social stigmatization within family lineages, and the acute risk of physical retaliation from abusers.
 
+![Figure 1.1: Ghana Police Service DOVVSU Case Intake Statistics (2018–2024)](figures/fig1_1_dovvsu_stats.png)
+*Figure 1.1: Ghana Police Service DOVVSU Case Intake Statistics (2018–2024)*
+
 The Parliament of Ghana established clear legal mechanisms to combat these violations through the passage of the Domestic Violence Act, 2007 (Act 732) and the Children's Act, 1998 (Act 560). Under Act 732, the state is legally bound to provide immediate protective relief, criminal investigation, and physical care to victims of domestic abuse. Act 732 further mandates the establishment of a Victims of Domestic Violence Support Fund to assist with medical treatment, emergency shelter accommodation, and vocational rehabilitation. 
 
 Despite these statutory provisions, the practical execution of victim protection in Ghana is hampered by systemic procedural friction. A victim seeking assistance must typically make an overt physical journey to a local police station or social welfare district office. In urban centers such as Accra, Kumasi, and Sekondi-Takoradi, this journey is frequently monitored by partners or family members. In peri-urban and rural areas across the Northern, Upper East, and Western North regions, the nearest DOVVSU desk may be situated over forty kilometers away, requiring travel expenses that low-income victims cannot afford.
@@ -85,6 +88,7 @@ This thesis delivers several distinct contributions to applied computer science,
 2. **Sub-10 Millisecond Functional Camouflage Architecture:** Formulates a dual-mode state machine that couples an authentic arithmetic evaluation engine with browser head manipulation. This provides a repeatable blueprint for covert web applications operating in hostile domestic environments.
 3. **Statutory Alignment of Web Evidentiary Pipelines in Common Law Jurisdictions:** Provides a concrete technical implementation mapping common-law evidentiary rules (Ghana Evidence Act, 1975 and Act 772) directly to client-side cryptographic hashing primitives and immutable server audit logs.
 4. **Empirical Security Verification Baseline for Crisis DPI:** Establishes a 10-vector automated test suite verifying cross-tenant database isolation, unforgeable audit logging, and anonymous realtime subscription boundaries in serverless relational architectures.
+5. **Open-Source Implementation Artifact:** Provides a complete reference implementation of the platform, including client cryptographic vault routines, automated database security test scripts, and deployment configurations. The software repository is published at https://github.com/baakumsaviour/safevoice.
 
 ---
 

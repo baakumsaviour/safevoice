@@ -10,11 +10,11 @@
 **BY**
 
 **SAVIOUR BAAKUM**  
-(10984321)
+(11357296)
 
 <br><br>
 
-A THESIS SUBMITTED TO THE DEPARTMENT OF COMPUTER SCIENCE, SCHOOL OF GRADUATE STUDIES, UNIVERSITY OF GHANA, IN PARTIAL FULFILLMENT OF THE REQUIREMENTS FOR THE AWARD OF THE DEGREE OF MASTER OF SCIENCE IN COMPUTER SCIENCE
+A PROJECT REPORT SUBMITTED TO THE DEPARTMENT OF COMPUTER SCIENCE, COLLEGE OF BASIC AND APPLIED SCIENCES, UNIVERSITY OF GHANA, IN PARTIAL FULFILLMENT OF THE REQUIREMENTS FOR THE AWARD OF THE DEGREE OF BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY
 
 <br><br>
 
@@ -27,7 +27,7 @@ A THESIS SUBMITTED TO THE DEPARTMENT OF COMPUTER SCIENCE, SCHOOL OF GRADUATE STU
 
 ## DECLARATION
 
-I, **SAVIOUR BAAKUM**, hereby declare that this thesis entitled *"SafeVoice: A Trauma-Informed, Cryptographically Verified Digital Public Infrastructure for Crisis Reporting and Case Management in Ghana"* is the result of my own independent research carried out under the supervision of **DR. KOFI SARPONG** in the Department of Computer Science, University of Ghana. 
+I, **SAVIOUR BAAKUM** (Student ID: **11357296**), hereby declare that this project report entitled *"SafeVoice: A Trauma-Informed, Cryptographically Verified Digital Public Infrastructure for Crisis Reporting and Case Management in Ghana"* is the result of my own independent research carried out under the supervision of **DR. KOFI SARPONG** in the Department of Computer Science, College of Basic and Applied Sciences, University of Ghana. 
 
 This work has not been presented either in whole or in part for the award of any other degree in this university or elsewhere. All citations and secondary materials consulted have been fully acknowledged.
 
@@ -71,7 +71,7 @@ This thesis is dedicated to:
 
 To every survivor of abuse and violence across Ghana whose voice was silenced by fear, lack of safe reporting channels, or systemic indifference. May technology serve as your shield and your bridge to justice.
 
-To my family, for their unending patience, prayers, and sacrifices throughout my graduate education at the University of Ghana.
+To my family, for their unending patience, prayers, and sacrifices throughout my undergraduate education at the University of Ghana.
 
 \newpage
 
@@ -85,7 +85,7 @@ I extend sincere thanks to the faculty and administrative staff of the Departmen
 
 I acknowledge the officers and caseworkers of the Domestic Violence and Victim Support Unit (DOVVSU) of the Ghana Police Service, the Department of Social Welfare, and civil society legal practitioners who shared operational insights regarding the procedural hurdles of Police Form 8 dispatch, evidence spoliation, and victim protection in Ghanaian courts.
 
-Finally, I thank my colleagues, fellow graduate students, and friends for their camaraderie, peer review, and moral support during late-night programming and testing sessions.
+Finally, I thank my colleagues, fellow students, and friends for their camaraderie, peer review, and moral support during late-night programming and testing sessions.
 
 \newpage
 
@@ -235,6 +235,9 @@ ewpage
 
 Gender-based violence (GBV), domestic abuse, and violence against children represent significant social, legal, and public health problems in Ghana. The Domestic Violence and Victim Support Unit (DOVVSU) of the Ghana Police Service consistently records between 15,000 and 18,000 formal complaints annually across the country (Ghana Police Service, 2024). These reported figures represent only a fraction of actual occurrences. Sociological research and field surveys conducted by the Ministry of Gender, Children and Social Protection (MoGCSP) suggest that over 70% of abuse incidents in Ghanaian domestic environments go unrecorded (MoGCSP, 2021). The primary factors driving this non-reporting include deep-seated fear of economic abandonment, social stigmatization within family lineages, and the acute risk of physical retaliation from abusers.
 
+![Figure 1.1: Ghana Police Service DOVVSU Case Intake Statistics (2018–2024)](figures/fig1_1_dovvsu_stats.png)
+*Figure 1.1: Ghana Police Service DOVVSU Case Intake Statistics (2018–2024)*
+
 The Parliament of Ghana established clear legal mechanisms to combat these violations through the passage of the Domestic Violence Act, 2007 (Act 732) and the Children's Act, 1998 (Act 560). Under Act 732, the state is legally bound to provide immediate protective relief, criminal investigation, and physical care to victims of domestic abuse. Act 732 further mandates the establishment of a Victims of Domestic Violence Support Fund to assist with medical treatment, emergency shelter accommodation, and vocational rehabilitation. 
 
 Despite these statutory provisions, the practical execution of victim protection in Ghana is hampered by systemic procedural friction. A victim seeking assistance must typically make an overt physical journey to a local police station or social welfare district office. In urban centers such as Accra, Kumasi, and Sekondi-Takoradi, this journey is frequently monitored by partners or family members. In peri-urban and rural areas across the Northern, Upper East, and Western North regions, the nearest DOVVSU desk may be situated over forty kilometers away, requiring travel expenses that low-income victims cannot afford.
@@ -315,6 +318,7 @@ This thesis delivers several distinct contributions to applied computer science,
 2. **Sub-10 Millisecond Functional Camouflage Architecture:** Formulates a dual-mode state machine that couples an authentic arithmetic evaluation engine with browser head manipulation. This provides a repeatable blueprint for covert web applications operating in hostile domestic environments.
 3. **Statutory Alignment of Web Evidentiary Pipelines in Common Law Jurisdictions:** Provides a concrete technical implementation mapping common-law evidentiary rules (Ghana Evidence Act, 1975 and Act 772) directly to client-side cryptographic hashing primitives and immutable server audit logs.
 4. **Empirical Security Verification Baseline for Crisis DPI:** Establishes a 10-vector automated test suite verifying cross-tenant database isolation, unforgeable audit logging, and anonymous realtime subscription boundaries in serverless relational architectures.
+5. **Open-Source Implementation Artifact:** Provides a complete reference implementation of the platform, including client cryptographic vault routines, automated database security test scripts, and deployment configurations. The software repository is published at https://github.com/baakumsaviour/safevoice.
 
 ---
 
@@ -377,6 +381,11 @@ The existing paper-based workflow operates as follows:
 6. The examining medical officer completes the clinical findings by hand on the paper form and returns it to the victim to courier back to the police station.
 
 This bureaucratic round-trip introduces severe delays that routinely exceed the critical 72-hour forensic window during which DNA biological evidence remains viable on epithelial surfaces. Furthermore, because public clinics lack integrated digital billing vouchers for state-mandated domestic violence care, victims are routinely subjected to unofficial, out-of-pocket medical examination charges ranging from GH₵300 to GH₵1,200. When survivors cannot produce these funds, the paper Form 8 remains unsigned, and criminal prosecution collapses prior to trial.
+
+Figure 2.1 contrasts this sequential paper-based bottleneck against the parallelized, cryptographically authenticated case routing enabled by SafeVoice.
+
+![Figure 2.1: Institutional Case Flow Comparison: Paper-Based DOVVSU vs SafeVoice](figures/fig2_1_institutional_case_flow.png)
+*Figure 2.1: Institutional Case Flow Comparison: Paper-Based DOVVSU vs SafeVoice*
 
 Table 2.1 summarizes the operational comparison between historical interventions and SafeVoice.
 
@@ -621,6 +630,9 @@ SafeVoice is organized into a modular four-tier architecture: **Client Layer (PW
 └────────────────────────────────────────────┘  └─────────────────────────────┘
 ```
 
+![Figure 3.1: SafeVoice High-Level Tiered System Architecture](figures/fig3_1_system_architecture.png)
+*Figure 3.1: SafeVoice High-Level Tiered System Architecture*
+
 ---
 
 ## 3.3 Ephemeral In-Memory Draft Vault Engineering
@@ -652,6 +664,9 @@ To ensure **Zero-DOM-Leakage**, SafeVoice operates an ephemeral in-memory vault 
        │
        └───► Timer expires OR '0000 =' entered ──► [PURGED] (Memory zeroed)
 ```
+
+![Figure 3.2: Web Crypto AES-256-GCM Ephemeral In-Memory Draft Vault Workflow](figures/fig3_2_ephemeral_vault.png)
+*Figure 3.2: Web Crypto AES-256-GCM Ephemeral In-Memory Draft Vault Workflow*
 
 ### Mathematical Formulation
 Let $D$ represent the serialized JSON string of the active report draft, comprising incident category, narrative, selected region, district, and contact details:
@@ -708,6 +723,9 @@ The disguise engine is modeled as a finite-state machine with four primary state
                                         └───────────────┘
 ```
 
+![Figure 3.3: State Transition Diagram of Stealth Camouflage Engine](figures/fig3_3_stealth_state_machine.png)
+*Figure 3.3: State Transition Diagram of Stealth Camouflage Engine*
+
 ### Arithmetic Engine & Secret Evaluation Loop
 The disguise cannot rely on a static visual mockup; if an assailant tests the screen by tapping numbers and operators, the application must compute accurate arithmetic. 
 
@@ -743,6 +761,11 @@ const handleEquals = useCallback(() => {
 }, [displayValue, operation, prevValue, unlockPin, onUnlock, onPanicWipe])
 ```
 
+Figure 3.4 depicts the physical visual keypad configuration, button dispatch bindings, and secret PIN evaluation pathway.
+
+![Figure 3.4: Authentic Arithmetic Calculator Disguise Keypad and Event Handler](figures/fig3_4_calculator_keypad.png)
+*Figure 3.4: Authentic Arithmetic Calculator Disguise Keypad and Event Handler*
+
 ### Tab Metadata Spoofing
 Upon transition into `CAMOUFLAGE_ACTIVE`, the state machine manipulates three elements of browser tab metadata:
 1. `document.title = 'QuickCalc - Calculator'`
@@ -759,6 +782,11 @@ SafeVoice implements a dual-layer security model comprising application-level Se
 The system supports two entry pathways:
 - **Authenticated Staff & Caseworkers:** Registered personnel log in through standard credentials. Their role is committed to `public.users.role` as either `caseworker` or `admin`.
 - **Anonymous Survivors:** Anonymous reporters are provisioned with an authentic Supabase anonymous authentication session (`supabase.auth.signInAnonymously()`). This creates a genuine UUID in `auth.users`, enabling PostgREST to evaluate `auth.uid()` in Row-Level Security policies and subscribe to real-time websocket channels without exposing personal identity.
+
+Figure 3.5 diagrams the anonymous authentication session lifecycle and database RLS policy boundary.
+
+![Figure 3.5: Supabase Anonymous Authentication and PostgREST RLS Security Boundary](figures/fig3_5_rls_security_boundary.png)
+*Figure 3.5: Supabase Anonymous Authentication and PostgREST RLS Security Boundary*
 
 ### Role-Based Authorization Gates
 Every server action in `server/actions/` invokes strict validation from `server/auth.ts` on its first line of execution:
@@ -827,11 +855,16 @@ Once triaged, SafeVoice orchestrates twin operational tracks:
 - **Track A (Criminal Justice & DOVVSU Police):** Dispatches geolocated alert packets including GhanaPostGPS digital addresses to the nearest police squad vehicle. Enables station sergeants to issue cryptographic QR-coded Digital Police Form 8 medical examination vouchers.
 - **Track B (Social Care & Clinical Protection):** Notifies Department of Social Welfare caseworkers and partner medical centers (Korle-Bu, KATH, Ridge, Tamale), facilitating trauma counseling and shelter coordination.
 
+Figure 3.6 illustrates the dual-track case routing architecture dividing enforcement alerts from social welfare interventions.
+
+![Figure 3.6: Dual-Track Case Routing: Criminal Enforcement vs Social Welfare](figures/fig3_6_dual_track_routing.png)
+*Figure 3.6: Dual-Track Case Routing: Criminal Enforcement vs Social Welfare*
+
 ---
 
 ## 3.7 Evaluation and Verification Framework
 
-The empirical evaluation of SafeVoice is conducted using three specialized verification frameworkes:
+The empirical evaluation of SafeVoice is conducted using three specialized verification suites:
 
 1. **Security Isolation Verification Suite ([`scripts/verify-rls.mjs`](file:///Users/user/development/safevoice/scripts/verify-rls.mjs)):** An automated script that provisions two independent anonymous reporters (User A and User B) against the live cloud database (`wnfvzbybxhswucrwolyf.supabase.co`). The test suite executes 10 adversarial checks attempting cross-tenant case reading, unauthorized status closing, message spoofing, caseworker impersonation, and administrative self-promotion.
 2. **Stealth and Cryptographic Profiler ([`scripts/verify-stealth.mjs`](file:///Users/user/development/safevoice/scripts/verify-stealth.mjs)):** A benchmarking tool that validates Web Crypto AES-256-GCM encryption/decryption round-trips, measures draft serialization time, verifies memory zeroing upon expiry, and tests arithmetic precision and secret PIN detection.
@@ -890,6 +923,10 @@ The implementation of the SafeVoice platform was executed using a modern, type-s
 4. **PWA Offline Shell:** Configured via `@ducanh2912/next-pwa` with `turbopack: {}` configuration, caching static JavaScript bundles, stylesheets, and calculator assets so that disguise and emergency phone directories operate 100% offline.
 5. **Geospatial Visualization:** Integrated Mapbox GL (`mapbox-gl` v3.24) at `/admin/analytics` displaying live geocoded markers across Ghana's 16 administrative regions with deliberate 1.5 km random coordinate jitter to protect victim privacy.
 
+### Repository Availability and Open Source Artifacts
+The entire implementation, cryptographic test scripts, RLS isolation suites, and deployment assets are available in the public source repository:
+https://github.com/baakumsaviour/safevoice
+
 ---
 
 ## 4.2 Security and Multi-Tenant Isolation Results
@@ -921,6 +958,8 @@ Isolation checks (A acting against B's data):
 Cleaned up test rows.
 10 passed, 0 failed
 ```
+
+![Figure 4.1: Automated RLS Security Isolation Test Execution Output](figures/fig4_1_rls_test_output.png)
 *Figure 4.1: Automated RLS Security Isolation Test Execution Output*
 
 Table 4.1 details the adversarial vectors tested, the expected security boundary, and the observed result.
@@ -966,6 +1005,9 @@ Table 4.2 documents the measured latencies across 100 test iterations per device
 
 The measured latencies fall well below the human visual perception threshold (approximately 16 milliseconds, or one frame at 60 Hz). When the disguise is triggered, the interface switches instantly, with zero visual stutter or partial layout reflow.
 
+![Figure 4.2: Stealth Mode Transition Latency across Test Devices (ms)](figures/fig4_2_latency_benchmark.png)
+*Figure 4.2: Stealth Mode Transition Latency across Test Devices (ms)*
+
 ### Ephemeral Draft Vault Lifecycle & Memory Profiling
 To verify the **Zero-DOM-Leakage** guarantee, memory heap snapshots were taken before camouflage activation, during camouflage active state, and after unmasking.
 
@@ -994,6 +1036,10 @@ To evaluate compliance with Section 7 and Section 8 of the Electronic Transactio
 2. **Tamper Detection Proof:** A simulated Man-in-the-Middle (MitM) modification was executed by appending a single byte (`0x00`) to an uploaded voice file on the server. When the case dossier was generated, the verification engine detected the hash mismatch:
    $$\text{Calculated Hash} \neq \text{Intake Hash Committed in Audit Log}$$
    The system flagged the evidence as "Compromised / Altered", proving that evidence spoliation is mathematically detectable.
+3. **Geospatial Incident Triage Verification:** Incident dispatch and regional distribution were verified via the administrative analytics console (`/admin/analytics`). Figure 4.3 illustrates the Mapbox GL interactive incident clustering across Ghana's 16 administrative regions, incorporating 1.5 km random privacy jittering to protect victim confidentiality.
+
+![Figure 4.3: Interactive Incident Mapbox Visualization for Ghana's 16 Administrative Regions](figures/fig4_3_mapbox_ghana_map.png)
+*Figure 4.3: Interactive Incident Mapbox Visualization for Ghana's 16 Administrative Regions*
 
 ---
 
