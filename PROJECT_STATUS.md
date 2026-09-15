@@ -1,8 +1,20 @@
 # SafeVoice Project Status
 
-## 🎯 Current Status (September 2026) — National DPI Blueprint & Full Landing Page Live ✓
+## 🎯 Current Status (September 2026) — Stealth Mode & Camouflage PWA Live ✓
 
-### What Was Done Recently (2026-09-06)
+### What Was Done Recently (2026-09-15)
+
+#### 1. **Stealth Mode & Camouflage Skin (PWA)** ✓
+- **Authentic Interactive Calculator Disguise (`CalculatorDisguise.tsx`)**: Fully functional dark-mode arithmetic calculator (`bg-slate-950`) with LCD readout, full touch keypad (`+`, `-`, `×`, `÷`, `%`, `.`, `±`, `C`/`AC`, `=`), and physical keyboard support.
+- **Zero-DOM-Leakage & Ephemeral Draft Vault (`draftVault.ts`)**: Encrypts active form inputs and voice recordings via in-memory Web Crypto `AES-256-GCM` key with 15-minute auto-expiry timer, removing all victim text from the DOM during disguise.
+- **Covert Unmasking Protocol**: Entering PIN `1984 =` dissolves calculator and restores SafeVoice and draft data. 3-second long-press on header opens secret verification dialog.
+- **Panic Wipe Code (`0000 =`)**: Instantly purges all in-memory drafts, local session caches, and resets display to `0` with zero trace.
+- **Tab & Metadata Spoofing**: `StealthProvider` dynamically replaces `document.title` with `"QuickCalc - Calculator"`, swaps favicon to neutral `/icons/calc.svg`, and sanitizes address bar via `window.history.replaceState`.
+- **Discreet Stealth Triggers**: Added `StealthButton` to `LandingNavbar`, `LandingFooter`, and `ReportForm`. Upgraded `QuickEscape` to offer 1-click Calculator Disguise alongside Google jump; double-tap `Esc` activates camouflage instantly.
+- **PWA Camouflage**: Configured `@ducanh2912/next-pwa` with `turbopack: {}` compatibility, neutral PWA manifest (`QuickCalc Utility`), and 192x192 / 512x512 arithmetic icons for home screen disguised installation.
+- **Comprehensive Verification**: 100% pass on automated test suite (`scripts/verify-stealth.mjs`), 10/10 RLS security tests passing, and clean Next.js 16 production build.
+
+### What Was Done Previously (2026-09-06)
 
 #### 1. **Council of Agents Deliberation & National DPI Blueprint PRD** ✓
 - Convened 5-specialist Council of Agents (Architect, Legal/DPI Researcher, Security & Forensics, Trauma UX Specialist, National Telecoms Specialist)
