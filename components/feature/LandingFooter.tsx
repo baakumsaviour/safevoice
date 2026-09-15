@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Shield, Phone, Lock, AlertTriangle } from 'lucide-react'
+import { StealthButton } from '@/components/stealth/StealthButton'
 
 interface LandingFooterProps {
   onOpenTracker: () => void
@@ -34,12 +35,15 @@ export function LandingFooter({ onOpenTracker }: LandingFooterProps) {
               </p>
             </div>
           </div>
-          <button
-            onClick={handleQuickEscape}
-            className="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs py-2 px-5 rounded-full transition-colors shrink-0 cursor-pointer"
-          >
-            Leave Site Now
-          </button>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <StealthButton variant="pill" label="Disguise App" />
+            <button
+              onClick={handleQuickEscape}
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs py-2 px-5 rounded-full transition-colors shrink-0 cursor-pointer"
+            >
+              Leave Site Now
+            </button>
+          </div>
         </div>
 
         {/* Main Links */}

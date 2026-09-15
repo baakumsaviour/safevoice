@@ -4,6 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Shield, PhoneCall, Search, LogIn } from 'lucide-react'
 
+import { StealthButton } from '@/components/stealth/StealthButton'
+
 interface LandingNavbarProps {
   onOpenTracker: () => void
 }
@@ -75,6 +77,10 @@ export function LandingNavbar({ onOpenTracker }: LandingNavbarProps) {
               <span>Login / Sign Up</span>
             </button>
           </Link>
+
+          {/* Stealth Camouflage Toggle */}
+          <StealthButton variant="pill" className="hidden sm:inline-flex" label="Disguise" />
+          <StealthButton variant="icon" className="sm:hidden" />
 
           {/* Quick Escape */}
           <button
