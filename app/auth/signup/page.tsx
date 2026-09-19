@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { AlertCircle, CheckCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle, Shield, ArrowRight } from 'lucide-react'
 
 import { signupAction } from '../actions'
 
@@ -73,14 +73,28 @@ export default function SignupPage() {
       <div className="w-full max-w-md">
         <div className="bg-canvas rounded-[12px] p-8 border-2 border-mute/20">
           {/* Header */}
-          <div className="mb-8 text-center">
+          <div className="mb-6 text-center">
             <Link href="/">
               <div className="w-12 h-12 bg-primary rounded-sm flex items-center justify-center mx-auto mb-4 cursor-pointer">
                 <Image src="/safevoice logo.png" alt="SafeVoice Logo" width={32} height={32} className="object-contain" />
               </div>
             </Link>
             <h1 className="display-sm text-ink mb-2">Create account</h1>
-            <p className="body-md text-body">Report safely and securely</p>
+            <p className="body-md text-body">Optional citizen account</p>
+          </div>
+
+          {/* Survivor Anonymity Reminder */}
+          <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-xl text-left">
+            <p className="caption-strong text-ink flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5 text-primary" />
+              No account needed to report
+            </p>
+            <p className="caption text-body mt-1">
+              You do not need to register to submit an incident or reach crisis intervention.
+            </p>
+            <Link href="/report" className="caption text-primary hover:underline font-medium mt-2 inline-flex items-center gap-1">
+              Submit an anonymous report instead <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
 
           {/* Error */}
@@ -149,12 +163,17 @@ export default function SignupPage() {
           </form>
 
           {/* Link to login */}
-          <p className="body-sm text-center text-body mt-6">
-            Already have an account?{' '}
-            <Link href="/auth/login" className="text-primary hover:text-primary/80 font-semibold">
-              Sign in
+          <div className="mt-6 pt-4 border-t border-mute space-y-2 text-center">
+            <p className="body-sm text-body">
+              Already have an account?{' '}
+              <Link href="/auth/login" className="text-primary hover:text-primary/80 font-semibold">
+                Sign in
+              </Link>
+            </p>
+            <Link href="/" className="block caption text-body hover:text-primary">
+              ← Back to home
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </main>

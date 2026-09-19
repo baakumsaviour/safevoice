@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Shield, PhoneCall, Search, LogIn } from 'lucide-react'
+import { Shield, PhoneCall, Search } from 'lucide-react'
 
 import { StealthButton } from '@/components/stealth/StealthButton'
 
@@ -61,7 +61,7 @@ export function LandingNavbar({ onOpenTracker }: LandingNavbarProps) {
           </button>
         </nav>
 
-        {/* Right Actions: Auth + Quick Escape */}
+        {/* Right Actions: Quick Escape & Stealth */}
         <div className="flex items-center gap-3">
           <button
             onClick={onOpenTracker}
@@ -70,13 +70,6 @@ export function LandingNavbar({ onOpenTracker }: LandingNavbarProps) {
           >
             <Search className="w-4 h-4 text-primary" />
           </button>
-
-          <Link href="/auth/login" className="hidden sm:inline-flex">
-            <button className="border border-border bg-canvas text-ink body-sm py-2.5 px-5 rounded-full hover:bg-canvas-soft transition-colors flex items-center gap-2 font-medium cursor-pointer">
-              <LogIn className="w-4 h-4" />
-              <span>Login / Sign Up</span>
-            </button>
-          </Link>
 
           {/* Stealth Camouflage Toggle */}
           <StealthButton variant="pill" className="hidden sm:inline-flex" label="Disguise" />

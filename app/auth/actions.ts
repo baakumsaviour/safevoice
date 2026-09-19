@@ -9,6 +9,7 @@ const STAFF_ROLES = ['admin', 'caseworker', 'analyst']
 export async function loginAction(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim()
   const password = String(formData.get('password') ?? '')
+  const portal = String(formData.get('portal') ?? '').trim()
   if (!email || !password) return { error: 'Please enter your email and password.' }
 
   const supabase = await createClient()
@@ -30,7 +31,14 @@ export async function loginAction(formData: FormData) {
     return { error: 'Your account is not fully set up yet. Please contact support.' }
   }
 
-  redirect(STAFF_ROLES.includes(userRecord.role) ? '/admin' : '/dashboard')
+  const isStaff = STAFF_ROLES.includes(userRecord.role)
+
+  if (portal === 'staff' && !isStaff) {
+    await supabase.auth.signOut()
+    return { error: 'Access restricted. This portal is for authorized DOVVSU officers and caseworkers only.' }
+  }
+
+  redirect(isStaff ? '/admin' : '/dashboard')
 }
 
 export async function signupAction(formData: FormData) {
@@ -81,3 +89,10 @@ export async function logoutAction() {
   await supabase.auth.signOut()
   redirect('/auth/login')
 }
+
+export async function adminLogoutAction() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect('/auth/admin-login')
+}
+

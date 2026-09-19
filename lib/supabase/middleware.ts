@@ -38,7 +38,7 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isVictimRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/chat')
   const isAdminRoute = pathname.startsWith('/admin')
-  const isAuthPage = pathname === '/auth/login' || pathname === '/auth/signup'
+  const isAuthPage = pathname === '/auth/login' || pathname === '/auth/signup' || pathname === '/auth/admin-login'
 
   // Redirects must carry over any Set-Cookie headers written by the Supabase
   // client (rotated refresh tokens, sign-out deletions) or sessions corrupt.
@@ -51,7 +51,11 @@ export async function updateSession(request: NextRequest) {
     return response
   }
 
-  if ((isVictimRoute || isAdminRoute) && !user) {
+  if (isAdminRoute && !user) {
+    return redirectTo('/auth/admin-login')
+  }
+
+  if (isVictimRoute && !user) {
     return redirectTo('/auth/login')
   }
 
@@ -67,17 +71,21 @@ export async function updateSession(request: NextRequest) {
     // /admin and /dashboard (that redirect-loops and locks the user out).
     if (!role && (isVictimRoute || isAdminRoute)) {
       await supabase.auth.signOut()
-      return redirectTo('/auth/login', '?error=account-setup')
+      return redirectTo(isAdminRoute ? '/auth/admin-login' : '/auth/login', '?error=account-setup')
     }
 
     const isStaff = ['caseworker', 'admin', 'analyst'].includes(role ?? '')
 
-    if (isAdminRoute && !isStaff) return redirectTo('/dashboard')
+    if (isAdminRoute && !isStaff) return redirectTo('/auth/admin-login', '?error=unauthorized')
     if (isVictimRoute && isStaff) return redirectTo('/admin')
 
     // Signed-in (non-anonymous) users don't need the login/signup pages.
     if (isAuthPage && role && !user.is_anonymous) {
-      return redirectTo(isStaff ? '/admin' : '/dashboard')
+      if (isStaff) {
+        return redirectTo('/admin')
+      } else if (pathname !== '/auth/admin-login') {
+        return redirectTo('/dashboard')
+      }
     }
   }
 

@@ -79,10 +79,14 @@ export function LandingFooter({ onOpenTracker }: LandingFooterProps) {
                   Emergency Helplines
                 </a>
               </li>
-              <li>
-                <Link href="/auth/login" className="hover:text-primary transition-colors">
-                  Caseworker Login
+              <li className="pt-1">
+                <Link href="/auth/admin-login" className="hover:text-primary transition-colors font-medium text-ink flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-primary" />
+                  <span>Staff & Officer Portal</span>
                 </Link>
+                <p className="text-[11px] text-body/80 mt-0.5">
+                  DOVVSU & Caseworkers (Citizens do not need an account)
+                </p>
               </li>
             </ul>
           </div>

@@ -57,6 +57,10 @@ export default function CaseDetailsPage() {
     let cancelled = false
     Promise.all([getCaseDetailsAction(caseNumber), getAdminDataAction()]).then(([res, adminRes]) => {
       if (cancelled) return
+      if ('error' in adminRes) {
+        setLoadError(adminRes.error)
+        return
+      }
       if ('success' in adminRes && adminRes.caseworkers) {
         setCaseworkers(adminRes.caseworkers)
       }

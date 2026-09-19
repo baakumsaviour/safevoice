@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Shield, ArrowRight } from 'lucide-react'
 
 import { loginAction } from '../actions'
 
@@ -34,14 +34,28 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-canvas rounded-[12px] p-8 border-2 border-mute/20">
           {/* Header */}
-          <div className="mb-8 text-center">
+          <div className="mb-6 text-center">
             <Link href="/">
               <div className="w-12 h-12 bg-primary rounded-sm flex items-center justify-center mx-auto mb-4 cursor-pointer">
                 <Image src="/safevoice logo.png" alt="SafeVoice Logo" width={32} height={32} className="object-contain" />
               </div>
             </Link>
             <h1 className="display-sm text-ink mb-2">Sign in</h1>
-            <p className="body-md text-body">Access your account</p>
+            <p className="body-md text-body">Access your citizen account</p>
+          </div>
+
+          {/* Survivor Anonymity Reminder */}
+          <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-xl text-left">
+            <p className="caption-strong text-ink flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5 text-primary" />
+              Reporting does not require an account
+            </p>
+            <p className="caption text-body mt-1">
+              SafeVoice protects your privacy. You can file a report immediately without creating an account or logging in.
+            </p>
+            <Link href="/report" className="caption text-primary hover:underline font-medium mt-2 inline-flex items-center gap-1">
+              Submit an anonymous report instead <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
 
           {/* Error */}
@@ -86,15 +100,23 @@ export default function LoginPage() {
           </form>
 
           {/* Links */}
-          <div className="mt-8 pt-8 border-t border-mute space-y-4">
+          <div className="mt-8 pt-6 border-t border-mute space-y-3">
             <p className="body-sm text-center text-body">
               Don't have an account?{' '}
               <Link href="/auth/signup" className="text-primary hover:text-primary/80 font-semibold">
                 Create one
               </Link>
             </p>
-            <Link href="/" className="block text-center body-sm text-primary hover:text-primary/80">
-              Back to home
+            <div className="pt-2 border-t border-border/50 text-center">
+              <p className="caption text-body">
+                Are you a DOVVSU officer or caseworker?{' '}
+                <Link href="/auth/admin-login" className="text-ink font-semibold hover:text-primary underline">
+                  Staff Portal
+                </Link>
+              </p>
+            </div>
+            <Link href="/" className="block text-center caption text-body hover:text-primary pt-1">
+              ← Back to home
             </Link>
           </div>
         </div>

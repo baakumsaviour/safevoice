@@ -1,10 +1,17 @@
 import { ReactNode } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { redirect } from 'next/navigation'
 import { Map, MessageSquare, LogOut, Users } from 'lucide-react'
-import { logoutAction } from '@/app/auth/actions'
+import { adminLogoutAction } from '@/app/auth/actions'
+import { getSessionUser } from '@/server/auth'
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  const user = await getSessionUser()
+  if (!user || !['admin', 'caseworker', 'analyst'].includes(user.role)) {
+    redirect('/auth/admin-login')
+  }
+
   return (
     <div className="min-h-screen bg-canvas flex flex-col md:flex-row">
       {/* Sidebar */}
@@ -36,7 +43,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="p-6 border-t border-white/10">
-          <form action={logoutAction}>
+          <form action={adminLogoutAction}>
             <button type="submit" className="flex items-center gap-3 text-on-dark/70 hover:text-white transition-colors w-full cursor-pointer">
               <LogOut className="w-5 h-5" />
               <span>Sign Out</span>
