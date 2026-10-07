@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Shield, Phone, Lock, AlertTriangle } from 'lucide-react'
+import { Shield, Phone, Lock, AlertTriangle, FileText } from 'lucide-react'
 import { StealthButton } from '@/components/stealth/StealthButton'
 
 interface LandingFooterProps {
@@ -86,6 +86,15 @@ export function LandingFooter({ onOpenTracker }: LandingFooterProps) {
                 </Link>
                 <p className="text-[11px] text-body/80 mt-0.5">
                   DOVVSU & Caseworkers (Citizens do not need an account)
+                </p>
+              </li>
+              <li className="pt-2 border-t border-border/50">
+                <Link href="/docs" className="hover:text-primary transition-colors font-medium text-ink flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-primary" />
+                  <span>Platform Guide & Testing Hub</span>
+                </Link>
+                <p className="text-[11px] text-body/80 mt-0.5">
+                  Academic documentation, test accounts & scenarios
                 </p>
               </li>
             </ul>

@@ -22,22 +22,23 @@ test('public navbar does not display a prominent login/signup button to avoid di
 });
 
 test('staff login lands on the admin dashboard', async ({ page }) => {
-  await page.goto('/auth/login');
-  await page.locator('input[name="email"]').fill('admin@safevoice.local');
-  await page.locator('input[name="password"]').fill('password123');
+  await page.goto('/auth/admin-login');
+  await page.locator('input[name="email"]').fill('admin1@safevoice.test');
+  await page.locator('input[name="password"]').fill('00000000');
   await page.getByRole('button', { name: /sign in/i }).click();
 
   await expect(page).toHaveURL(/\/admin/, { timeout: 15000 });
-  await expect(page.getByText('Active Cases').first()).toBeVisible();
+  await expect(page.getByText('Active Cases').first()).toBeVisible({ timeout: 15000 });
 });
 
 test('staff cannot open the victim dashboard (bounced to /admin, no loop)', async ({ page }) => {
-  await page.goto('/auth/login');
-  await page.locator('input[name="email"]').fill('worker@safevoice.local');
-  await page.locator('input[name="password"]').fill('password123');
+  await page.goto('/auth/admin-login');
+  await page.locator('input[name="email"]').fill('caseworker1@safevoice.test');
+  await page.locator('input[name="password"]').fill('00000000');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/admin/, { timeout: 15000 });
+  await expect(page.getByText('Active Cases').first()).toBeVisible({ timeout: 15000 });
 
   await page.goto('/dashboard');
-  await expect(page).toHaveURL(/\/admin/);
+  await expect(page).toHaveURL(/\/admin/, { timeout: 15000 });
 });

@@ -40,6 +40,8 @@ function AdminLoginForm() {
     }
   }
 
+  const defaultEmail = searchParams.get('email') || ''
+
   return (
     <div className="bg-canvas rounded-[16px] p-8 border border-border shadow-2xl">
       {/* Header */}
@@ -83,6 +85,7 @@ function AdminLoginForm() {
           <input
             type="email"
             name="email"
+            defaultValue={defaultEmail}
             required
             placeholder="officer@dovvsu.gov.gh"
             className="w-full px-4 py-3 border border-border rounded-xl bg-canvas text-ink body-sm placeholder-body focus:border-primary focus:outline-none transition-colors"
